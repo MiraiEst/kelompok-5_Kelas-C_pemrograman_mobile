@@ -1,8 +1,8 @@
 ﻿# kelompok-5_Kelas-C_pemrograman_mobile
 Nama Anggota Kelompok:
 1. Aysar Afdhillah Akbar (D121241015)
-   Username Github: aysar987
+   @aysar987
 2. Cristiko Esteranto (D121241108)
-   Username Github: MiraiEst
+   @MiraiEst
 3. Muhammad Rhiza Arrazi (D121241054)
-   Username Github: Rhiza04
+   @Rhiza04
