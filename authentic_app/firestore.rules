@@ -1,0 +1,151 @@
+rules_version = '2';
+
+// Authorization lives here: the app hides buttons, but these rules are what
+// actually stop a user from doing something they are not allowed to do.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function isAdmin() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(uid())).data.role == 'admin';
+    }
+    function changed() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ---------------------------------------------------------------- users
+    match /users/{userId} {
+      // Profiles hold emails and device tokens: only the owner (or an admin)
+      // may read them. Public names are copied onto listings instead.
+      allow read: if signedIn() && (uid() == userId || isAdmin());
+      // You can only create your own profile, and never as an admin.
+      allow create: if signedIn() && uid() == userId
+        && request.resource.data.role == 'user';
+      // You can edit your profile but not your role. Admins can change roles.
+      allow update: if (signedIn() && uid() == userId && !changed().hasAny(['role', 'email']))
+        || isAdmin();
+      allow delete: if isAdmin();
+
+      match /notifications/{notificationId} {
+        allow read, delete: if signedIn() && uid() == userId;
+        allow update: if signedIn() && uid() == userId && changed().hasOnly(['read']);
+        // Other users create notifications (e.g. "you've been outbid") inside
+        // their bid transaction. They must sign them with their own uid.
+        allow create: if signedIn()
+          && request.resource.data.fromUid == uid()
+          && request.resource.data.read == false
+          && request.resource.data.keys().hasOnly(
+               ['type', 'title', 'body', 'listingId', 'fromUid', 'read', 'createdAt']);
+      }
+
+      match /watchlist/{listingId} {
+        allow read, write: if signedIn() && uid() == userId;
+      }
+    }
+
+    // ------------------------------------------------------------- listings
+    match /listings/{listingId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.sellerId == uid()
+        && request.resource.data.status == 'active'
+        && request.resource.data.bidCount == 0
+        && request.resource.data.leaderId == null
+        && request.resource.data.startPrice is int
+        && request.resource.data.startPrice > 0
+        && request.resource.data.currentPrice == request.resource.data.startPrice
+        && request.resource.data.endsAt > request.time;
+
+      // A bid: not the seller, auction open by SERVER time, one bid at a time,
+      // price never goes down, and only bid-related fields change.
+      function isValidBid() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return signedIn()
+          && uid() != before.sellerId
+          && before.status == 'active'
+          && request.time < before.endsAt
+          && changed().hasOnly(['currentPrice', 'bidCount', 'bidderIds', 'leaderId',
+                                'leaderName', 'leaderMax', 'reserveMet',
+                                'buyNowAvailable', 'lastBidAt'])
+          && after.bidCount == before.bidCount + 1
+          && after.currentPrice >= before.currentPrice
+          && uid() in after.bidderIds
+          && (after.leaderId == before.leaderId || after.leaderId == uid());
+      }
+
+      // Anyone may close an auction once SERVER time has passed endsAt.
+      function isValidClose() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return signedIn()
+          && before.status == 'active'
+          && request.time >= before.endsAt
+          && changed().hasOnly(['status', 'winnerId', 'finalPrice', 'buyNowAvailable', 'endedAt'])
+          && (after.status == 'unsold'
+              || (after.status == 'sold'
+                  && before.reserveMet == true
+                  && after.winnerId == before.leaderId
+                  && after.finalPrice == before.currentPrice));
+      }
+
+      function isValidBuyNow() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return signedIn()
+          && uid() != before.sellerId
+          && before.status == 'active'
+          && request.time < before.endsAt
+          && before.buyNowAvailable == true
+          && before.bidCount == 0
+          && before.buyNowPrice != null
+          && after.status == 'sold'
+          && after.winnerId == uid()
+          && after.finalPrice == before.buyNowPrice
+          && after.currentPrice == before.buyNowPrice
+          && changed().hasOnly(['status', 'winnerId', 'finalPrice', 'currentPrice',
+                                'leaderId', 'leaderName', 'buyNowAvailable', 'endedAt']);
+      }
+
+      // Sellers may end early only when there are no bids.
+      function isSellerEndingEarly() {
+        return signedIn()
+          && uid() == resource.data.sellerId
+          && resource.data.status == 'active'
+          && resource.data.bidCount == 0
+          && request.resource.data.status == 'ended'
+          && changed().hasOnly(['status', 'buyNowAvailable', 'endedAt']);
+      }
+
+      function isWatcherCountChange() {
+        return signedIn()
+          && changed().hasOnly(['watcherCount'])
+          && (request.resource.data.watcherCount == resource.data.watcherCount + 1
+              || request.resource.data.watcherCount == resource.data.watcherCount - 1);
+      }
+
+      allow update: if isAdmin()
+        || isValidBid()
+        || isValidClose()
+        || isValidBuyNow()
+        || isSellerEndingEarly()
+        || isWatcherCountChange();
+
+      allow delete: if isAdmin()
+        || (signedIn() && uid() == resource.data.sellerId && resource.data.bidCount == 0);
+
+      match /bids/{bidId} {
+        allow read: if signedIn();
+        // Bid history entries are append-only and stamped with server time.
+        allow create: if signedIn()
+          && request.resource.data.userId == uid()
+          && request.resource.data.createdAt == request.time
+          && get(/databases/$(database)/documents/listings/$(listingId)).data.sellerId != uid();
+        allow update, delete: if false;
+      }
+    }
+  }
+}
