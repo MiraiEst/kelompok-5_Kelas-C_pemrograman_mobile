@@ -113,7 +113,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
   Widget build(BuildContext context) {
     final categories = ref.watch(categoriesProvider).value ?? const [];
     final categoryItems = <String, String>{
-      if (_category != null) _category!: _category!, // imported category not in list
+      ?_category: _category!, // imported category not in list
       for (final c in categories) c.slug: c.name,
     };
 
@@ -233,7 +233,11 @@ class _SellScreenState extends ConsumerState<SellScreen> {
             FilledButton(
               onPressed: _busy ? null : _submit,
               child: _busy
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
                   : const Text('List item'),
             ),
           ],

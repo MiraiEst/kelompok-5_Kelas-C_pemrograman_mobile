@@ -21,11 +21,11 @@ class ListingCard extends ConsumerWidget {
       child: InkWell(
         onTap: () => context.push('/listing/${l.id}'),
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 child: ListingImage(url: l.thumbnail, size: 84),
               ),
               const SizedBox(width: 12),
@@ -33,7 +33,12 @@ class ListingCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: text.titleSmall),
+                    Text(
+                      l.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleSmall,
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       (l.finalPrice ?? l.currentPrice).toRupiah(),

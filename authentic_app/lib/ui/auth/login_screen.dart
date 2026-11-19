@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/repositories/auth_repository.dart';
 import '../../providers/providers.dart';
+import '../widgets/brand.dart';
 import '../widgets/common.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -56,48 +57,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _form,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Icon(Icons.gavel, size: 64),
-                  const SizedBox(height: 8),
-                  Text('Imagi Auction',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineMedium),
-                  const SizedBox(height: 32),
-                  TextFormField(
-                    controller: _email,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(labelText: 'Email'),
-                    validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _password,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Password'),
-                    validator: (v) => (v == null || v.length < 6) ? 'At least 6 characters' : null,
-                    onFieldSubmitted: (_) => _submit(),
-                  ),
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: _busy ? null : _submit,
-                    child: _busy
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Sign in'),
-                  ),
-                  TextButton(onPressed: _resetPassword, child: const Text('Forgot password?')),
-                  TextButton(
-                    onPressed: () => context.go('/register'),
-                    child: const Text("Don't have an account? Register"),
-                  ),
-                ],
-              ),
+        child: AuthCard(
+          child: Form(
+            key: _form,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Center(child: AuthenticLogo.full(height: 34)),
+                const SizedBox(height: 28),
+                const Text(
+                  'Selamat Datang',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _email,
+                  keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.email],
+                  decoration: const InputDecoration(hintText: 'email'),
+                  validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _password,
+                  obscureText: true,
+                  autofillHints: const [AutofillHints.password],
+                  decoration: const InputDecoration(hintText: 'password'),
+                  validator: (v) => (v == null || v.length < 6) ? 'At least 6 characters' : null,
+                  onFieldSubmitted: (_) => _submit(),
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: SmallLink('Lupa password?', onTap: _resetPassword),
+                ),
+                const SizedBox(height: 28),
+                FilledButton(
+                  onPressed: _busy ? null : _submit,
+                  child: _busy
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Masuk'),
+                ),
+                const SizedBox(height: 4),
+                Center(child: SmallLink('Register?', onTap: () => context.go('/register'))),
+              ],
             ),
           ),
         ),

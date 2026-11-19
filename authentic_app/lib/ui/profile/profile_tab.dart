@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/providers.dart';
+import '../theme.dart';
 import '../widgets/common.dart';
 
 class ProfileTab extends ConsumerWidget {
@@ -29,14 +30,20 @@ class ProfileTab extends ConsumerWidget {
       children: [
         Center(
           child: CircleAvatar(
-            radius: 36,
-            child: Text(user.displayName.isEmpty ? '?' : user.displayName[0].toUpperCase(),
-                style: const TextStyle(fontSize: 28)),
+            radius: 40,
+            backgroundColor: AppColors.ink,
+            foregroundColor: AppColors.paper,
+            child: Text(
+              user.displayName.isEmpty ? '?' : user.displayName[0].toUpperCase(),
+              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w500),
+            ),
           ),
         ),
         const SizedBox(height: 12),
         Center(child: Text(user.displayName, style: Theme.of(context).textTheme.titleLarge)),
-        Center(child: Text(user.email)),
+        Center(
+          child: Text(user.email, style: const TextStyle(color: AppColors.muted)),
+        ),
         const SizedBox(height: 8),
         Center(
           child: Chip(
@@ -44,7 +51,8 @@ class ProfileTab extends ConsumerWidget {
             label: Text('Role: ${user.role.value}'),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
+        const Divider(),
         // Authorization: only admins see (and can open) the admin panel.
         if (user.isAdmin)
           ListTile(
@@ -65,11 +73,7 @@ class ProfileTab extends ConsumerWidget {
             if (context.mounted) showSnack(context, 'FCM token copied.');
           },
         ),
-        ListTile(
-          leading: const Icon(Icons.logout),
-          title: const Text('Sign out'),
-          onTap: signOut,
-        ),
+        ListTile(leading: const Icon(Icons.logout), title: const Text('Sign out'), onTap: signOut),
       ],
     );
   }

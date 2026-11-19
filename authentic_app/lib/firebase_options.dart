@@ -1,14 +1,23 @@
-// PLACEHOLDER — this file is overwritten when you run:
-//
-//   dart pub global activate flutterfire_cli
-//   flutterfire configure
-//
-// See README.md, step 2.
-import 'package:firebase_core/firebase_core.dart';
+// Firebase configuration for project `imagi-auction-k5c`.
+// Regenerate with: flutterfire configure --project=imagi-auction-k5c
+import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class DefaultFirebaseOptions {
-  static FirebaseOptions get currentPlatform => throw UnsupportedError(
-        'Firebase is not configured yet. Run `flutterfire configure` '
-        'in the project folder to generate lib/firebase_options.dart.',
-      );
+  static FirebaseOptions get currentPlatform {
+    if (kIsWeb) return web;
+    throw UnsupportedError(
+      'DefaultFirebaseOptions only configured for web. '
+      'Run `flutterfire configure` to add other platforms.',
+    );
+  }
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyC6_LTavFxkFrcVDvB86sLAlDWhqMqe8Yc',
+    appId: '1:526772532249:web:58966146f361144e476688',
+    messagingSenderId: '526772532249',
+    projectId: 'imagi-auction-k5c',
+    authDomain: 'imagi-auction-k5c.firebaseapp.com',
+    storageBucket: 'imagi-auction-k5c.firebasestorage.app',
+  );
 }

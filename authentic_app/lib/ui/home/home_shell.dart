@@ -6,6 +6,7 @@ import '../../providers/providers.dart';
 import '../activity/activity_tab.dart';
 import '../notifications/notifications_tab.dart';
 import '../profile/profile_tab.dart';
+import '../widgets/brand.dart';
 import 'browse_tab.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
@@ -16,9 +17,8 @@ class HomeShell extends ConsumerStatefulWidget {
 }
 
 class _HomeShellState extends ConsumerState<HomeShell> {
+  static const _profileIndex = 3;
   int _index = 0;
-
-  static const _titles = ['Browse auctions', 'My activity', 'Notifications', 'Profile'];
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +26,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final user = ref.watch(currentUserProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_titles[_index])),
+      appBar: AuthenticTopBar(onAvatarTap: () => setState(() => _index = _profileIndex)),
       body: user.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Could not load profile: $e')),
@@ -44,21 +44,27 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               label: const Text('Sell'),
             )
           : null,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: AuthenticNavBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: [
-          const NavigationDestination(icon: Icon(Icons.storefront_outlined), label: 'Browse'),
-          const NavigationDestination(icon: Icon(Icons.history), label: 'Activity'),
-          NavigationDestination(
-            icon: Badge(
-              isLabelVisible: unread > 0,
-              label: Text('$unread'),
-              child: const Icon(Icons.notifications_outlined),
-            ),
-            label: 'Alerts',
+        onSelected: (i) => setState(() => _index = i),
+        items: [
+          const NavItem(
+            icon: Icons.storefront_outlined,
+            activeIcon: Icons.storefront,
+            label: 'Browse',
           ),
-          const NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
+          const NavItem(
+            icon: Icons.receipt_long_outlined,
+            activeIcon: Icons.receipt_long,
+            label: 'Activity',
+          ),
+          NavItem(
+            icon: Icons.notifications_outlined,
+            activeIcon: Icons.notifications,
+            label: 'Alerts',
+            badge: unread,
+          ),
+          const NavItem(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Profile'),
         ],
       ),
     );

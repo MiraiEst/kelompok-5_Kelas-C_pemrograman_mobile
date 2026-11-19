@@ -10,6 +10,7 @@ import '../../domain/models/app_user.dart';
 import '../../domain/models/bid.dart';
 import '../../domain/models/listing.dart';
 import '../../providers/providers.dart';
+import '../theme.dart';
 import '../widgets/common.dart';
 
 class ListingDetailScreen extends ConsumerWidget {
@@ -70,8 +71,10 @@ class _DetailBody extends ConsumerWidget {
             children: [
               Text(l.title, style: text.titleLarge),
               const SizedBox(height: 4),
-              Text('${l.condition.label} · ${l.category} · Seller: ${l.sellerName}',
-                  style: text.bodySmall),
+              Text(
+                '${l.condition.label} · ${l.category} · Seller: ${l.sellerName}',
+                style: text.bodySmall,
+              ),
               const SizedBox(height: 12),
               _StatusBanner(listing: l, user: user),
               _PriceCard(listing: l, bids: bids.value ?? const []),
@@ -133,28 +136,37 @@ class _StatusBanner extends StatelessWidget {
     final ended = !l.isLive(DateTime.now());
 
     // Advanced Dart: switch expression over a record with guards.
+    // Monochrome banners: solid black = good news, red outline = act now,
+    // grey = finished.
+    const won = (AppColors.ink, AppColors.paper, AppColors.ink);
+    const lost = (AppColors.fill, AppColors.ink, AppColors.line);
+    const leading = (AppColors.ink, AppColors.paper, AppColors.ink);
+    const outbid = (AppColors.paper, AppColors.error, AppColors.error);
     final banner = switch ((ended, l.leaderId == uid, didBid)) {
-      (true, _, _) when l.winnerId == uid => (Colors.grey, 'You won this item!'),
-      (true, _, true) => (Colors.grey, "You didn't win this item."),
+      (true, _, _) when l.winnerId == uid => (won, 'You won this item!'),
+      (true, _, true) => (lost, "You didn't win this item."),
       (false, true, _) => (
-          Colors.green,
-          "You're the highest bidder. Your max: ${(l.leaderMax ?? l.currentPrice).toRupiah()}"
-        ),
-      (false, false, true) => (Colors.red, "You've been outbid. Raise your max to get back in."),
+        leading,
+        "You're the highest bidder. Your max: ${(l.leaderMax ?? l.currentPrice).toRupiah()}",
+      ),
+      (false, false, true) => (outbid, "You've been outbid. Raise your max to get back in."),
       _ => null,
     };
     if (banner == null) return const SizedBox();
-    final (color, message) = banner;
+    final ((bg, fg, border), message) = banner;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        border: Border.all(color: color),
-        borderRadius: BorderRadius.circular(8),
+        color: bg,
+        border: Border.all(color: border, width: 1.5),
+        borderRadius: BorderRadius.circular(AppRadius.button),
       ),
-      child: Text(message, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+      child: Text(
+        message,
+        style: TextStyle(color: fg, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }
@@ -178,7 +190,10 @@ class _PriceCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(l.isActive ? 'Current price' : 'Final price', style: text.bodySmall),
-            Text(price.toRupiah(), style: text.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              price.toRupiah(),
+              style: text.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
             _Conversion(amountIdr: price),
             const SizedBox(height: 8),
             Wrap(
@@ -203,7 +218,10 @@ class _PriceCard extends ConsumerWidget {
                     onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),
                   ),
                   const Spacer(),
-                  Text(DateFormat('d MMM yyyy, HH:mm', 'id_ID').format(l.endsAt), style: text.bodySmall),
+                  Text(
+                    DateFormat('d MMM yyyy, HH:mm', 'id_ID').format(l.endsAt),
+                    style: text.bodySmall,
+                  ),
                 ],
               )
             else
@@ -230,8 +248,12 @@ class _Conversion extends ConsumerWidget {
           return rate == null ? '' : '$symbol${(amountIdr * rate).toStringAsFixed(2)}';
         }
 
-        final parts = [fmt('USD', r'$'), fmt('EUR', '€'), fmt('SGD', r'S$'), fmt('MYR', 'RM')]
-            .where((s) => s.isNotEmpty);
+        final parts = [
+          fmt('USD', r'$'),
+          fmt('EUR', '€'),
+          fmt('SGD', r'S$'),
+          fmt('MYR', 'RM'),
+        ].where((s) => s.isNotEmpty);
         return Text('≈ ${parts.join(' · ')}', style: Theme.of(context).textTheme.bodySmall);
       },
       orElse: () => const SizedBox(),
@@ -281,8 +303,9 @@ class _BidBoxState extends ConsumerState<_BidBox> {
     );
     if (confirmed != true || !mounted) return;
 
-    final decision =
-        await ref.read(bidControllerProvider.notifier).place(listingId: l.id, maxAmount: amount);
+    final decision = await ref
+        .read(bidControllerProvider.notifier)
+        .place(listingId: l.id, maxAmount: amount);
     if (!mounted) return;
 
     final error = ref.read(bidControllerProvider).error;
@@ -321,7 +344,11 @@ class _BidBoxState extends ConsumerState<_BidBox> {
         FilledButton.icon(
           onPressed: busy ? null : _submit,
           icon: busy
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.paper),
+                )
               : const Icon(Icons.gavel),
           label: Text(isLeader ? 'Raise max bid' : 'Place max bid'),
         ),
@@ -347,7 +374,9 @@ class _BuyNowButton extends ConsumerWidget {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Buy It Now'),
-              content: Text('Buy "${listing.title}" for ${price.toRupiah()}? This ends the auction.'),
+              content: Text(
+                'Buy "${listing.title}" for ${price.toRupiah()}? This ends the auction.',
+              ),
               actions: [
                 TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
                 FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Buy')),
@@ -379,13 +408,19 @@ class _SellerControls extends ConsumerWidget {
     final l = listing;
     final repo = ref.read(listingRepositoryProvider);
     final canEnd = l.isActive && (l.bidCount == 0 || user.isAdmin);
-    final canRelist = l.sellerId == user.uid &&
+    final canRelist =
+        l.sellerId == user.uid &&
         (l.status == ListingStatus.unsold || l.status == ListingStatus.ended);
 
     return Wrap(
       spacing: 8,
       children: [
-        if (user.isAdmin) const Chip(label: Text('Admin')),
+        if (user.isAdmin)
+          const Chip(
+            label: Text('Admin'),
+            backgroundColor: AppColors.ink,
+            labelStyle: TextStyle(color: AppColors.paper, fontWeight: FontWeight.w500),
+          ),
         if (canEnd)
           OutlinedButton(
             onPressed: () async {
@@ -399,7 +434,7 @@ class _SellerControls extends ConsumerWidget {
             child: const Text('End listing'),
           ),
         if (canRelist)
-          FilledButton.tonal(
+          FilledButton(
             onPressed: () async {
               final id = await repo.relist(l, user, AuctionDuration.sevenDays);
               if (context.mounted) {

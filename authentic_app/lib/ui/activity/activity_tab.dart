@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/models/listing.dart';
 import '../../providers/providers.dart';
+import '../theme.dart';
+import '../widgets/brand.dart';
 import '../widgets/common.dart';
 import '../widgets/listing_card.dart';
 
@@ -22,6 +24,7 @@ class ActivityTab extends ConsumerWidget {
       length: 5,
       child: Column(
         children: [
+          const PageHeading('My activity'),
           const TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
@@ -39,9 +42,12 @@ class ActivityTab extends ConsumerWidget {
                 _ListingList(
                   value: bidOn.whenData((l) => l.where((x) => x.isLive(now)).toList()),
                   empty: 'You have no active bids.',
-                  trailing: (l) => Icon(
-                    l.leaderId == uid ? Icons.emoji_events : Icons.trending_down,
-                    color: l.leaderId == uid ? Colors.green : Colors.red,
+                  trailing: (l) => Tooltip(
+                    message: l.leaderId == uid ? 'You are winning' : 'Outbid',
+                    child: Icon(
+                      l.leaderId == uid ? Icons.emoji_events : Icons.trending_down,
+                      color: l.leaderId == uid ? AppColors.ink : AppColors.error,
+                    ),
                   ),
                 ),
                 _ListingList(
@@ -77,17 +83,17 @@ class _ListingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => value.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => ErrorText(e),
-        data: (items) => items.isEmpty
-            ? EmptyState(icon: Icons.inbox_outlined, text: empty)
-            : ListView.builder(
-                padding: const EdgeInsets.all(8),
-                itemCount: items.length,
-                itemBuilder: (_, i) =>
-                    ListingCard(listing: items[i], trailing: trailing?.call(items[i])),
-              ),
-      );
+    loading: () => const Center(child: CircularProgressIndicator()),
+    error: (e, _) => ErrorText(e),
+    data: (items) => items.isEmpty
+        ? EmptyState(icon: Icons.inbox_outlined, text: empty)
+        : ListView.builder(
+            padding: const EdgeInsets.all(8),
+            itemCount: items.length,
+            itemBuilder: (_, i) =>
+                ListingCard(listing: items[i], trailing: trailing?.call(items[i])),
+          ),
+  );
 }
 
 class _Watchlist extends ConsumerWidget {
@@ -112,7 +118,10 @@ class _Watchlist extends ConsumerWidget {
                     builder: (_, ref, _) => switch (ref.watch(listingProvider(id))) {
                       AsyncData(value: final l?) => ListingCard(listing: l),
                       AsyncData() => const SizedBox(),
-                      _ => const SizedBox(height: 100, child: Center(child: CircularProgressIndicator())),
+                      _ => const SizedBox(
+                        height: 100,
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
                     },
                   ),
               ],
@@ -127,15 +136,18 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (status) {
-      ListingStatus.active => Colors.blue,
-      ListingStatus.sold => Colors.green,
-      ListingStatus.unsold || ListingStatus.ended => Colors.grey,
+    // Active = solid black, sold = outlined, unsold/ended = grey.
+    final (bg, fg, border) = switch (status) {
+      ListingStatus.active => (AppColors.ink, AppColors.paper, AppColors.ink),
+      ListingStatus.sold => (AppColors.paper, AppColors.ink, AppColors.ink),
+      ListingStatus.unsold ||
+      ListingStatus.ended => (AppColors.fill, AppColors.muted, AppColors.line),
     };
     return Chip(
       label: Text(status.value),
-      labelStyle: TextStyle(color: color),
-      side: BorderSide(color: color),
+      backgroundColor: bg,
+      labelStyle: TextStyle(color: fg, fontWeight: FontWeight.w500),
+      side: BorderSide(color: border, width: 1.5),
       visualDensity: VisualDensity.compact,
     );
   }

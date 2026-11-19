@@ -32,9 +32,19 @@ service cloud.firestore {
         allow read, delete: if signedIn() && uid() == userId;
         allow update: if signedIn() && uid() == userId && changed().hasOnly(['read']);
         // Other users create notifications (e.g. "you've been outbid") inside
-        // their bid transaction. They must sign them with their own uid.
+        // their bid / buy-now / close transaction. They must sign them with
+        // their own uid, and the recipient must be involved in the listing
+        // (seller, bidder or winner), so nobody can spam arbitrary users.
+        // getAfter() sees the listing as it will be after the transaction.
+        function listingAfter() {
+          return getAfter(/databases/$(database)/documents/listings/$(request.resource.data.listingId)).data;
+        }
         allow create: if signedIn()
           && request.resource.data.fromUid == uid()
+          && request.resource.data.listingId is string
+          && (userId == listingAfter().sellerId
+              || userId in listingAfter().get('bidderIds', [])
+              || userId == listingAfter().get('winnerId', null))
           && request.resource.data.read == false
           && request.resource.data.keys().hasOnly(
                ['type', 'title', 'body', 'listingId', 'fromUid', 'read', 'createdAt']);
