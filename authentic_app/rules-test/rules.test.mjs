@@ -15,7 +15,6 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import {ref, uploadBytes} from "firebase/storage";
 
 let env;
 const hour = 60 * 60 * 1000;
@@ -24,7 +23,6 @@ before(async () => {
   env = await initializeTestEnvironment({
     projectId: "demo-imagi",
     firestore: {rules: readFileSync("../firestore.rules", "utf8"), host: "127.0.0.1", port: 8080},
-    storage: {rules: readFileSync("../storage.rules", "utf8"), host: "127.0.0.1", port: 9199},
   });
 });
 after(() => env.cleanup());
@@ -213,23 +211,5 @@ describe("orders", () => {
     await assertFails(setDoc(doc(verified("eve"), "feedback/l1_buyer"), {...fb, fromUid: "eve"}));
     await assertSucceeds(setDoc(doc(verified("buyer"), "feedback/l1_buyer"), fb));
     await assertFails(setDoc(doc(verified("buyer"), "feedback/l1_buyer"), {...fb, rating: "negative"}));
-  });
-});
-
-describe("storage", () => {
-  const img = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
-  const storage = (uid) => env.authenticatedContext(uid).storage();
-
-  test("only the owner can upload into their folder", async () => {
-    const meta = {contentType: "image/jpeg"};
-    await assertSucceeds(uploadBytes(ref(storage("alice"), "listings/alice/l1/0.jpg"), img, meta));
-    await assertFails(uploadBytes(ref(storage("bob"), "listings/alice/l1/1.jpg"), img, meta));
-  });
-
-  test("rejects non-images and files over 5 MB", async () => {
-    const s = storage("alice");
-    await assertFails(uploadBytes(ref(s, "listings/alice/l1/2.jpg"), img, {contentType: "text/plain"}));
-    const big = new Uint8Array(5 * 1024 * 1024 + 1);
-    await assertFails(uploadBytes(ref(s, "listings/alice/l1/3.jpg"), big, {contentType: "image/jpeg"}));
   });
 });

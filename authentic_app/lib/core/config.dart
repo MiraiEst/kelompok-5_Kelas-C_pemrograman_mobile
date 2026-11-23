@@ -1,5 +1,12 @@
 /// Team decisions in one place. Replace the values marked TODO.
 abstract final class AppConfig {
+  /// Supabase Storage for photo files (everything else stays on Firebase).
+  /// Pass at build time: --dart-define=SUPABASE_URL=https://xxxx.supabase.co
+  /// --dart-define=SUPABASE_ANON_KEY=... (the anon/publishable key, never service_role).
+  static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const supabaseBucket = 'photos';
+
   /// TODO(team): real Terms of Service page.
   static const termsUrl = 'https://example.com/terms';
 

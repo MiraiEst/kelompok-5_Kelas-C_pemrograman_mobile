@@ -33,7 +33,14 @@ class AuthRepository {
     );
     final user = cred.user!;
     await user.updateDisplayName(name.trim());
-    await _createProfile(user, name: name.trim(), phone: phone.trim());
+    final created = await ensureProfile(user, name: name.trim(), phone: phone.trim());
+    if (!created) {
+      // The app's fallback may have created the profile first: fill in the form values.
+      await _db.collection('users').doc(user.uid).update({
+        'displayName': name.trim(),
+        'phone': phone.trim(),
+      });
+    }
     await user.sendEmailVerification();
   }
 
@@ -53,16 +60,22 @@ class AuthRepository {
       final idToken = account.authentication.idToken;
       cred = await _auth.signInWithCredential(GoogleAuthProvider.credential(idToken: idToken));
     }
-    final user = cred.user!;
-    final doc = await _db.collection('users').doc(user.uid).get();
-    if (!doc.exists) {
-      await _createProfile(user, name: user.displayName ?? user.email?.split('@').first ?? 'User');
-    }
+    await ensureProfile(cred.user!);
   }
 
-  Future<void> _createProfile(User user, {required String name, String? phone}) =>
-      _db.collection('users').doc(user.uid).set({
-        'displayName': name,
+  /// Creates `users/{uid}` if it does not exist yet; never overwrites one.
+  /// Also used as a fallback for accounts whose profile is missing (e.g. made
+  /// in the Firebase console or by an older app version). Returns true if it
+  /// created the profile.
+  Future<bool> ensureProfile(User user, {String? name, String? phone}) {
+    final ref = _db.collection('users').doc(user.uid);
+    return _db.runTransaction((tx) async {
+      if ((await tx.get(ref)).exists) return false;
+      var displayName = (name ?? user.displayName ?? '').trim();
+      if (displayName.length < 3) displayName = user.email?.split('@').first ?? 'User';
+      if (displayName.length < 3) displayName = 'User';
+      tx.set(ref, {
+        'displayName': displayName,
         'email': user.email ?? '',
         'phone': ?phone,
         'photoUrl': user.photoURL,
@@ -70,6 +83,9 @@ class AuthRepository {
         'fcmTokens': <String>[],
         'createdAt': FieldValue.serverTimestamp(),
       });
+      return true;
+    });
+  }
 
   Future<void> sendPasswordReset(String email) => _auth.sendPasswordResetEmail(email: email.trim());
 

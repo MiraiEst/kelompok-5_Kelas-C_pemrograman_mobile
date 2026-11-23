@@ -35,7 +35,6 @@ const {initializeApp} = require("firebase-admin/app");
 const {getFirestore, FieldValue, Timestamp} = require("firebase-admin/firestore");
 const {getMessaging} = require("firebase-admin/messaging");
 const {getAuth} = require("firebase-admin/auth");
-const {getStorage} = require("firebase-admin/storage");
 const config = require("./config");
 
 initializeApp();
@@ -597,11 +596,8 @@ exports.deleteAccount = onCall(async (req) => {
   // Personal data: profile + notifications, watchlist, drafts, addresses, payout.
   await db.recursiveDelete(db.doc(`users/${uid}`));
   await db.doc(`publicProfiles/${uid}`).delete();
-  try {
-    await getStorage().bucket().deleteFiles({prefix: `users/${uid}/`});
-  } catch (e) {
-    logger.warn(`could not delete avatar of ${uid}`, e);
-  }
+  // Photo files live in Supabase Storage; the app can't delete them with the
+  // anon key, so they are left there (see README).
   await getAuth().deleteUser(uid);
   return {ok: true};
 });

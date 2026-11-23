@@ -10,13 +10,13 @@ Tugas Pemrograman Mobile — Kelompok 5, Kelas C.
 | Fitur | Implementasi |
 |---|---|
 | Autentikasi | Email & password, login Google, verifikasi email, reset password — `lib/ui/auth/` |
-| Otorisasi | Role `user` / `admin`: guard di `lib/router.dart` + `firestore.rules` + `storage.rules` |
+| Otorisasi | Role `user` / `admin`: guard di `lib/router.dart` + `firestore.rules` + kebijakan bucket Supabase |
 | Navigasi | 4 tab (Home, Trending, Your bids, Account) dengan `StatefulShellRoute` — tiap tab menyimpan posisi scroll |
 | Home | Pencarian (debounce), filter kategori, "Ending soon", grid lelang dengan pagination dan pull-to-refresh |
 | Trending | Most bids / Most watched / New today (live), kenaikan tawaran 1 jam terakhir, kategori populer |
 | Lelang | Proxy bidding otomatis, reserve price, Buy It Now, format Auction / Buy It Now / Both — `lib/domain/bidding/` |
 | Detail lelang | Galeri + zoom, share, watchlist, banner status pribadi, riwayat tawaran tersamar, bottom sheet "Place max bid" |
-| Jual barang | Upload foto ke Firebase Storage (kompres, urutkan, sampul), validasi, draft, impor katalog DummyJSON |
+| Jual barang | Upload foto ke Supabase Storage (kompres, urutkan, sampul), validasi, draft, impor katalog DummyJSON |
 | Your bids | Bidding / Won / Didn't win / Watchlist, ringkasan Winning / Outbid / To pay |
 | Notifikasi | Push FCM + daftar notifikasi (dikelompokkan per hari, swipe hapus + undo, infinite scroll), deep link ke layar yang tepat |
 | Checkout | Alamat, kurir, metode bayar, pembayaran **Xendit Invoice** (mode test) dengan webhook |
@@ -32,7 +32,7 @@ Tugas Pemrograman Mobile — Kelompok 5, Kelas C.
 ```
 lib/
   core/          config (biaya, URL), extension, Result
-  data/          repository Firestore/Storage, API client, service (notifikasi, kurir, kompres foto)
+  data/          repository Firestore, upload foto Supabase, API client, service (notifikasi, kurir, kompres foto)
   domain/        model & logika bidding (proxy engine)
   l10n/          teks aplikasi (app_en.arb, app_id.arb)
   providers/     provider Riverpod
@@ -41,7 +41,7 @@ lib/
 functions/       Cloud Functions (Node.js 22)
 rules-test/      tes security rules dengan Firebase emulator
 firestore.rules  aturan keamanan Firestore
-storage.rules    aturan keamanan Firebase Storage
+supabase/        SQL bucket & kebijakan Supabase Storage (khusus file foto)
 test/            unit test proxy bidding, validasi, dan widget test
 ```
 
@@ -60,21 +60,37 @@ flutter pub get
 dart pub global activate flutterfire_cli
 flutterfire configure --project=imagi-auction-k5c
 
-flutter run            # pilih device: chrome / emulator Android / iOS
+# foto disimpan di Supabase Storage: salin supabase.example.json -> supabase.json, isi URL & key
+flutter run --dart-define-from-file=supabase.json
 ```
+
+Tanpa `supabase.json` aplikasi tetap jalan, tetapi upload foto menampilkan error.
 
 > Push notification hanya aktif di Android/iOS. Di web, notifikasi tampil di layar Notifications saja.
 
 ## Setup Firebase
 
-### 1. Firestore, Storage, dan rules
+### 1. Firestore (rules + index)
 
 ```bash
 firebase login
-firebase deploy --only firestore,storage   # rules + index
+firebase deploy --only firestore
 ```
 
-Firebase Storage untuk project baru butuh paket **Blaze**. Aktifkan Storage di Firebase Console dulu.
+### 1b. Supabase Storage (file foto)
+
+Login, database, dan backend tetap di Firebase; hanya **file foto** yang disimpan di Supabase
+(paket gratis, tanpa kartu kredit). URL publik foto disimpan di Firestore seperti biasa.
+
+1. Buat project di [supabase.com](https://supabase.com).
+2. SQL Editor → New query → tempel isi `supabase/storage.sql` → **Run**
+   (membuat bucket publik `photos`, hanya JPEG ≤ 5 MB, di folder `listings/`, `users/`, `cases/`).
+3. Project Settings → API: salin **Project URL** dan **anon / publishable key**
+   (jangan pakai `service_role`), lalu isi ke `supabase.json` (salinan `supabase.example.json`, tidak ikut git).
+
+Catatan: upload memakai anon key, jadi Supabase tidak tahu user Firebase mana yang mengunggah
+(bucket hanya membatasi jenis, ukuran, dan folder file). Foto tidak terhapus saat listing atau
+akun dihapus. Project Supabase gratis dijeda setelah 7 hari tidak aktif — aktifkan lagi di dashboard.
 
 ### 2. Login Google
 
@@ -124,7 +140,7 @@ Ubah field `role` pada dokumen `users/{uid}` menjadi `"admin"` lewat Firebase Co
 flutter analyze
 flutter test                     # unit test proxy engine + validasi + widget test (Home, bid sheet, Checkout)
 
-cd rules-test && npm install && npm test   # tes firestore.rules & storage.rules di emulator
+cd rules-test && npm install && npm test   # tes firestore.rules di emulator
 ```
 
 ## Anggota Kelompok

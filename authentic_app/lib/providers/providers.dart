@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
@@ -36,7 +35,6 @@ final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore
 final functionsProvider = Provider<FirebaseFunctions>(
   (ref) => FirebaseFunctions.instanceFor(region: 'asia-southeast1'),
 );
-final firebaseStorageProvider = Provider<FirebaseStorage>((ref) => FirebaseStorage.instance);
 
 final httpClientProvider = Provider<http.Client>((ref) {
   final client = http.Client();
@@ -61,7 +59,7 @@ final orderRepositoryProvider = Provider<OrderRepository>(
   (ref) => OrderRepository(ref.watch(firestoreProvider), ref.watch(functionsProvider)),
 );
 final storageRepositoryProvider = Provider<StorageRepository>(
-  (ref) => StorageRepository(ref.watch(firebaseStorageProvider)),
+  (ref) => StorageRepository(ref.watch(httpClientProvider)),
 );
 final catalogApiProvider = Provider<CatalogApi>((ref) => CatalogApi(ref.watch(httpClientProvider)));
 final currencyApiProvider = Provider<CurrencyApi>(
@@ -78,7 +76,15 @@ final authStateProvider = StreamProvider<User?>(
 final currentUserProvider = StreamProvider<AppUser?>((ref) {
   final user = ref.watch(authStateProvider).value;
   if (user == null) return Stream.value(null);
-  return ref.watch(userRepositoryProvider).watchUser(user.uid);
+  // A signed-in account without a profile would wait forever: create it once.
+  var ensured = false;
+  return ref.watch(userRepositoryProvider).watchUser(user.uid).asyncMap((profile) async {
+    if (profile == null && !ensured) {
+      ensured = true;
+      await ref.read(authRepositoryProvider).ensureProfile(user);
+    }
+    return profile;
+  });
 });
 
 final isAdminProvider = Provider<bool>(

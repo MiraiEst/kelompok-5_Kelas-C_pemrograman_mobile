@@ -14,3 +14,6 @@ functions/node_modules/
 .firebase/
 firebase-debug.log
 firestore-debug.log
+
+# Supabase keys for photo upload (copy from supabase.example.json)
+supabase.json
