@@ -1,0 +1,340 @@
+rules_version = '2';
+
+// Authorization lives here: the app hides buttons, but these rules are what
+// actually stop a user from doing something they are not allowed to do.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    // Email/password users must click the verification link before they can
+    // list or bid. Google accounts are already verified by Google.
+    function emailVerified() { return request.auth.token.email_verified == true; }
+    function isAdmin() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(uid())).data.role == 'admin';
+    }
+    function changed() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ---------------------------------------------------------------- users
+    match /users/{userId} {
+      // Profiles hold emails and device tokens: only the owner (or an admin)
+      // may read them. Public names are copied onto listings instead.
+      allow read: if signedIn() && (uid() == userId || isAdmin());
+      // You can only create your own profile, never as an admin and never
+      // with a made-up reputation.
+      allow create: if signedIn() && uid() == userId
+        && request.resource.data.role == 'user'
+        && request.resource.data.keys().hasOnly(
+             ['displayName', 'email', 'phone', 'photoUrl', 'role', 'fcmTokens', 'createdAt']);
+      // Owners may edit only these fields: never role, email or the rating
+      // numbers (feedbackScore, positivePct, ratingCount are set by Functions).
+      allow update: if (signedIn() && uid() == userId
+                        && changed().hasOnly(['displayName', 'photoUrl', 'phone',
+                                              'notificationPrefs', 'fcmTokens'])
+                        && request.resource.data.displayName is string
+                        && request.resource.data.displayName.size() >= 3)
+        || isAdmin();
+      // "Delete account" in the app removes the profile itself (no Cloud Functions).
+      allow delete: if (signedIn() && uid() == userId) || isAdmin();
+
+      // Payout bank account: owner and admins only.
+      match /private/{docId} {
+        allow read: if signedIn() && (uid() == userId || isAdmin());
+        allow delete: if signedIn() && uid() == userId;
+        allow create, update: if signedIn() && uid() == userId && docId == 'payout'
+          && request.resource.data.keys().hasOnly(['bankName', 'accountNumber', 'accountHolder'])
+          && request.resource.data.accountNumber is string;
+      }
+
+      // Shipping addresses: owner only.
+      match /addresses/{addressId} {
+        allow read, write: if signedIn() && uid() == userId;
+      }
+
+      match /notifications/{notificationId} {
+        allow read, delete: if signedIn() && uid() == userId;
+        allow update: if signedIn() && uid() == userId && changed().hasOnly(['read']);
+        // Other users create notifications (e.g. "you've been outbid") inside
+        // their bid / buy-now / close transaction. They must sign them with
+        // their own uid, and the recipient must be involved in the listing
+        // (seller, bidder or winner), so nobody can spam arbitrary users.
+        // getAfter() sees the listing as it will be after the transaction.
+        function listingAfter() {
+          return getAfter(/databases/$(database)/documents/listings/$(request.resource.data.listingId)).data;
+        }
+        allow create: if signedIn()
+          && request.resource.data.fromUid == uid()
+          && request.resource.data.listingId is string
+          && (userId == listingAfter().sellerId
+              || userId in listingAfter().get('bidderIds', [])
+              || userId == listingAfter().get('winnerId', null))
+          && request.resource.data.read == false
+          && request.resource.data.type in ['outbid', 'new_bid', 'reserve_met', 'won', 'lost',
+                                            'sold', 'unsold']
+          && request.resource.data.keys().hasOnly(
+               ['type', 'title', 'body', 'listingId', 'orderId', 'fromUid', 'read', 'createdAt']);
+      }
+
+      // Unfinished Sell forms.
+      match /drafts/{draftId} {
+        allow read, write: if signedIn() && uid() == userId;
+      }
+
+      match /watchlist/{listingId} {
+        allow read, write: if signedIn() && uid() == userId;
+      }
+    }
+
+    // ------------------------------------------------------ public profiles
+    // Reputation shown on listings (rating, member since). Written only by
+    // the server (Admin SDK: cron/ job or Cloud Functions), so clients can
+    // never fake their score.
+    match /publicProfiles/{userId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------- listings
+    match /listings/{listingId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && emailVerified()
+        && request.resource.data.sellerId == uid()
+        && request.resource.data.status == 'active'
+        && request.resource.data.bidCount == 0
+        && request.resource.data.leaderId == null
+        && request.resource.data.startPrice is int
+        && request.resource.data.startPrice > 0
+        && request.resource.data.currentPrice == request.resource.data.startPrice
+        && request.resource.data.endsAt > request.time
+        && request.resource.data.imageUrls is list
+        && request.resource.data.imageUrls.size() <= 12
+        && isValidFormat(request.resource.data);
+
+      // Sell form fields: format, shipping & returns.
+      function isValidFormat(d) {
+        return d.get('format', 'auction') in ['auction', 'buy_now', 'both']
+          && (d.get('format', 'auction') != 'buy_now'
+              || (d.buyNowPrice is int && d.buyNowPrice == d.startPrice && d.reservePrice == null))
+          && (d.get('format', 'auction') != 'auction' || d.buyNowPrice == null)
+          && d.get('handlingDays', 1) in [1, 2, 3, 5]
+          && d.get('location', '') is string
+          && d.get('acceptsReturns', false) is bool
+          && d.get('returnDays', 7) is int
+          && d.get('watcherIds', []).size() == 0;
+      }
+
+      // A bid: not the seller, auction open by SERVER time, one bid at a time,
+      // price never goes down, and only bid-related fields change.
+      function isValidBid() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return signedIn()
+          && emailVerified()
+          && uid() != before.sellerId
+          && before.status == 'active'
+          && before.get('format', 'auction') != 'buy_now'   // fixed price: no bids
+          && request.time < before.endsAt
+          && changed().hasOnly(['currentPrice', 'bidCount', 'bidderIds', 'leaderId',
+                                'leaderName', 'leaderMax', 'reserveMet',
+                                'buyNowAvailable', 'lastBidAt',
+                                'recentBidCount', 'recentBidWindowStart'])
+          && after.bidCount == before.bidCount + 1
+          && after.currentPrice >= before.currentPrice
+          && uid() in after.bidderIds
+          && (after.leaderId == before.leaderId || after.leaderId == uid());
+      }
+
+      // Anyone may close an auction once SERVER time has passed endsAt.
+      function isValidClose() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return signedIn()
+          && before.status == 'active'
+          && request.time >= before.endsAt
+          && changed().hasOnly(['status', 'winnerId', 'finalPrice', 'buyNowAvailable', 'endedAt'])
+          && (after.status == 'unsold'
+              || (after.status == 'sold'
+                  && before.reserveMet == true
+                  && after.winnerId == before.leaderId
+                  && after.finalPrice == before.currentPrice));
+      }
+
+      function isValidBuyNow() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return signedIn()
+          && emailVerified()
+          && uid() != before.sellerId
+          && before.status == 'active'
+          && request.time < before.endsAt
+          && before.buyNowAvailable == true
+          && before.bidCount == 0
+          && before.buyNowPrice != null
+          && after.status == 'sold'
+          && after.winnerId == uid()
+          && after.finalPrice == before.buyNowPrice
+          && after.currentPrice == before.buyNowPrice
+          && changed().hasOnly(['status', 'winnerId', 'finalPrice', 'currentPrice',
+                                'leaderId', 'leaderName', 'buyNowAvailable', 'endedAt']);
+      }
+
+      // Sellers may end early only when there are no bids.
+      function isSellerEndingEarly() {
+        return signedIn()
+          && uid() == resource.data.sellerId
+          && resource.data.status == 'active'
+          && resource.data.bidCount == 0
+          && request.resource.data.status == 'ended'
+          && changed().hasOnly(['status', 'buyNowAvailable', 'endedAt']);
+      }
+
+      // Watch / unwatch: count moves by one and only your own uid is
+      // added to / removed from watcherIds.
+      function isWatcherCountChange() {
+        let before = resource.data.get('watcherIds', []);
+        let after = request.resource.data.get('watcherIds', []);
+        return signedIn()
+          && changed().hasOnly(['watcherCount', 'watcherIds'])
+          && ((request.resource.data.watcherCount == resource.data.watcherCount + 1
+               && after.toSet().difference(before.toSet()).hasOnly([uid()])
+               && before.toSet().difference(after.toSet()).size() == 0)
+              || (request.resource.data.watcherCount == resource.data.watcherCount - 1
+               && before.toSet().difference(after.toSet()).hasOnly([uid()])
+               && after.toSet().difference(before.toSet()).size() == 0));
+      }
+
+      allow update: if isAdmin()
+        || isValidBid()
+        || isValidClose()
+        || isValidBuyNow()
+        || isSellerEndingEarly()
+        || isWatcherCountChange();
+
+      allow delete: if isAdmin()
+        || (signedIn() && uid() == resource.data.sellerId && resource.data.bidCount == 0);
+
+      // Each bidder's hidden maximum. Only the bidder can read their own.
+      match /myMax/{bidderId} {
+        allow read: if signedIn() && uid() == bidderId;
+        allow write: if signedIn() && uid() == bidderId
+          && request.resource.data.maxAmount is int
+          && request.resource.data.maxAmount > 0
+          && request.resource.data.keys().hasOnly(['maxAmount', 'updatedAt']);
+      }
+
+      match /bids/{bidId} {
+        allow read: if signedIn();
+        // Bid history entries are append-only and stamped with server time.
+        allow create: if signedIn()
+          && request.resource.data.userId == uid()
+          && request.resource.data.createdAt == request.time
+          && get(/databases/$(database)/documents/listings/$(listingId)).data.sellerId != uid();
+        allow update, delete: if false;
+      }
+    }
+
+    // --------------------------------------------------------------- orders
+    // Created by the onListingSold Cloud Function (orders/{listingId}).
+    // Payment status is only ever set by the Xendit webhook (Admin SDK).
+    match /orders/{orderId} {
+      function isBuyer() { return signedIn() && uid() == resource.data.buyerId; }
+      function isSeller() { return signedIn() && uid() == resource.data.sellerId; }
+      function before() { return resource.data; }
+      function after() { return request.resource.data; }
+
+      allow read: if isBuyer() || isSeller() || isAdmin();
+      allow create, delete: if false;
+
+      // Buyer fills in checkout choices while the order is unpaid.
+      function isCheckoutChoice() {
+        return isBuyer()
+          && before().status == 'awaiting_payment'
+          && changed().hasOnly(['address', 'courier', 'paymentMethod'])
+          && after().paymentMethod in ['virtual_account', 'qris', 'ewallet'];
+      }
+      // Seller: paid -> shipped -> in_transit -> delivered.
+      function isSellerStep() {
+        return isSeller() && (
+          (before().status == 'paid' && after().status == 'shipped'
+            && changed().hasOnly(['status', 'courier', 'trackingNumber', 'shippedAt', 'lastUpdate'])
+            && after().trackingNumber is string && after().trackingNumber.size() >= 6
+            && after().shippedAt == request.time)
+          || (before().status == 'shipped' && after().status == 'in_transit'
+            && changed().hasOnly(['status', 'inTransitAt', 'lastUpdate'])
+            && after().inTransitAt == request.time)
+          || (before().status in ['shipped', 'in_transit'] && after().status == 'delivered'
+            && changed().hasOnly(['status', 'deliveredAt', 'lastUpdate'])
+            && after().deliveredAt == request.time));
+      }
+      // Buyer confirms receipt -> completed (payout becomes pending).
+      function isBuyerComplete() {
+        return isBuyer()
+          && before().status in ['shipped', 'in_transit', 'delivered']
+          && after().status == 'completed'
+          && changed().hasOnly(['status', 'completedAt', 'payoutStatus'])
+          && after().completedAt == request.time
+          && after().payoutStatus == 'pending';
+      }
+      // Buyer opens a buyer-protection case (holds the payout).
+      function isBuyerOpensCase() {
+        return isBuyer()
+          && before().status in ['paid', 'shipped', 'in_transit', 'delivered']
+          && changed().hasOnly(['hasOpenCase'])
+          && after().hasOpenCase == true;
+      }
+
+      allow update: if isAdmin() || isCheckoutChoice() || isSellerStep()
+        || isBuyerComplete() || isBuyerOpensCase();
+    }
+
+    // ---------------------------------------------------------------- cases
+    match /cases/{caseId} {
+      function order() {
+        return get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data;
+      }
+      allow read: if signedIn()
+        && (uid() == resource.data.buyerId || uid() == resource.data.sellerId || isAdmin());
+      allow create: if signedIn()
+        && request.resource.data.buyerId == uid()
+        && order().buyerId == uid()
+        && request.resource.data.sellerId == order().sellerId
+        && request.resource.data.status == 'open'
+        && request.resource.data.reason in ['Not received', 'Not as described', 'Damaged', 'Other']
+        && request.resource.data.description is string
+        && request.resource.data.photoUrls.size() <= 5
+        && request.resource.data.keys().hasOnly(['orderId', 'buyerId', 'sellerId', 'reason',
+             'description', 'photoUrls', 'status', 'createdAt']);
+      allow update, delete: if isAdmin();
+    }
+
+    // ------------------------------------------------------------- feedback
+    // feedback/{orderId}_{buyer|seller}: one rating per side, create-only,
+    // only after the order is completed and within 60 days.
+    match /feedback/{feedbackId} {
+      function order() {
+        return get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data;
+      }
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.fromUid == uid()
+        && feedbackId == request.resource.data.orderId + '_' + request.resource.data.role
+        && order().status == 'completed'
+        && request.time < order().completedAt + duration.value(60, 'd')
+        && ((request.resource.data.role == 'buyer' && uid() == order().buyerId
+              && request.resource.data.toUid == order().sellerId)
+            || (request.resource.data.role == 'seller' && uid() == order().sellerId
+              && request.resource.data.toUid == order().buyerId))
+        && request.resource.data.rating in ['positive', 'neutral', 'negative']
+        && request.resource.data.comment is string
+        && request.resource.data.comment.size() <= 300
+        && request.resource.data.keys().hasOnly(['orderId', 'fromUid', 'toUid', 'role', 'rating',
+             'comment', 'createdAt']);
+      allow update, delete: if false;
+    }
+  }
+}

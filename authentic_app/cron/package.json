@@ -1,0 +1,16 @@
+{
+  "name": "imagi-auction-cron",
+  "description": "Server jobs (auction closing, orders, push, ratings) run by GitHub Actions instead of Cloud Functions",
+  "private": true,
+  "main": "run.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node run.js"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^9.4.1",
+    "firebase-admin": "^14.5.1"
+  }
+}

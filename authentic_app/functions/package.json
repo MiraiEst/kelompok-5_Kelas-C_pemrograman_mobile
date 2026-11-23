@@ -1,0 +1,17 @@
+{
+  "name": "imagi-auction-functions",
+  "description": "Push notifications and auction closing for Imagi Auction",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.1",
+    "firebase-functions": "^7.4.0"
+  },
+  "private": true
+}

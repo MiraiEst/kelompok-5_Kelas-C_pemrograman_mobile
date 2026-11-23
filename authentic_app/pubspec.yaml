@@ -1,0 +1,53 @@
+name: imagi_auction
+description: "Imagi Auction - online auction marketplace MVP (Flutter + Firebase) by imagi.labs"
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Firebase (requirement: Firebase integration + Authentication)
+  firebase_core: ^5.1.0
+  firebase_auth: ^7.0.1
+  cloud_firestore: ^7.1.0
+
+  # Push notifications (requirement: Push Notifications)
+  firebase_messaging: ^17.0.1
+  flutter_local_notifications: ^23.0.2
+
+  # State management (requirement: State management)
+  flutter_riverpod: ^3.5.0
+
+  # Routing with auth / role guards (requirement: Authorization)
+  go_router: ^18.1.4
+
+  # Open-source REST APIs: DummyJSON + Frankfurter (requirement: API)
+  http: ^1.2.2
+
+  intl: ^0.20.2
+  google_fonts: ^8.0.0
+  share_plus: ^13.3.1
+  url_launcher: ^6.3.3
+  google_sign_in: ^7.2.0
+  image_picker: ^1.2.4
+  flutter_image_compress: ^2.5.1
+  cloud_functions: ^7.1.0
+  cached_network_image: ^4.0.7
+  timezone: ^0.11.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+

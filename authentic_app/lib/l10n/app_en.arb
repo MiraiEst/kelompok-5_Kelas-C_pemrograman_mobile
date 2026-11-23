@@ -1,0 +1,209 @@
+{
+  "@@locale": "en",
+  "navHome": "Home",
+  "navTrending": "Trending",
+  "navYourBids": "Your bids",
+  "navAccount": "Account",
+  "tryAgain": "Try again",
+  "seeAll": "See all",
+  "cancel": "Cancel",
+  "back": "Back",
+  "close": "Close",
+  "save": "Save",
+  "notifications": "Notifications",
+  "notificationsUnread": "Notifications, {count} unread",
+  "@notificationsUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "welcomeBack": "Welcome back",
+  "signInSubtitle": "Sign in to bid, sell and track your orders",
+  "email": "Email",
+  "password": "Password",
+  "forgotPassword": "Forgot password?",
+  "signIn": "Sign in",
+  "or": "or",
+  "continueWithGoogle": "Continue with Google",
+  "noAccount": "Don't have an account?",
+  "register": "Register",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "enterValidEmail": "Enter a valid email",
+  "enterPassword": "Enter your password",
+  "enterEmailFirst": "Enter your email first.",
+  "resetEmailSent": "Password reset email sent.",
+  "createAccountTitle": "Create your account",
+  "createAccountSubtitle": "One account to buy and sell",
+  "username": "Username",
+  "usernameHint": "Shown masked when you bid (a***b)",
+  "atLeast3": "At least 3 characters",
+  "atLeast8": "At least 8 characters",
+  "phoneNumber": "Phone number",
+  "phoneInvalid": "Use an Indonesian number starting with 08",
+  "agreePrefix": "I agree to the ",
+  "termsOfService": "Terms of Service",
+  "and": " and ",
+  "privacyPolicy": "Privacy Policy",
+  "createAccount": "Create account",
+  "verifyNote": "We'll email you a link to verify your account before you can bid.",
+  "backToSignIn": "Back to sign in",
+  "verifyTitle": "Verify your email",
+  "verifyBody": "We sent a link to {email}. Open it to activate your account, then come back and tap \"I've verified\".",
+  "@verifyBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "iveVerified": "I've verified",
+  "resendEmail": "Resend email",
+  "resendEmailIn": "Resend email ({seconds}s)",
+  "@resendEmailIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "signOut": "Sign out",
+  "checkSpam": "Can't find it? Check your spam folder.",
+  "notVerifiedYet": "Not verified yet. Open the link in the email first.",
+  "verificationSent": "Verification email sent.",
+  "searchAuctions": "Search auctions",
+  "all": "All",
+  "endingSoon": "Ending soon",
+  "allAuctions": "All auctions",
+  "noActiveAuctions": "No active auctions yet",
+  "noEndingSoon": "No auctions ending soon.",
+  "sell": "Sell",
+  "sellAnItem": "Sell an item",
+  "endsIn": "Ends in ",
+  "trendingSubtitle": "Updated live from bids and watchers",
+  "mostBids": "Most bids",
+  "mostWatched": "Most watched",
+  "newToday": "New today",
+  "hotCategories": "Hot categories",
+  "nothingNewToday": "Nothing new in the last 24 hours.",
+  "noLiveCategories": "No live categories yet.",
+  "liveCount": "{count} live",
+  "@liveCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bidding": "Bidding",
+  "biddingCount": "Bidding ({count})",
+  "@biddingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "won": "Won",
+  "wonCount": "Won ({count})",
+  "@wonCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "didntWin": "Didn't win",
+  "watchlist": "Watchlist",
+  "winning": "Winning",
+  "outbid": "Outbid",
+  "toPay": "To pay",
+  "emptyBidding": "You have no active bids",
+  "emptyWon": "Items you win will appear here",
+  "emptyLost": "Nothing here yet",
+  "emptyWatchlist": "Tap the heart on an auction to watch it",
+  "raiseMaxBid": "Raise max bid",
+  "placeMaxBid": "Place max bid",
+  "payNow": "Pay now",
+  "trackOrder": "Track order",
+  "markAllRead": "Mark all read",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "earlier": "Earlier",
+  "notificationsEmpty": "Outbid alerts, wins and sales will show up here.",
+  "notificationDeleted": "Notification deleted",
+  "undo": "Undo",
+  "justNow": "Just now",
+  "minAgo": "{n} min ago",
+  "@minAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{n} h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{n} days ago",
+  "@daysAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "selling": "Selling",
+  "sold": "Sold",
+  "purchases": "Purchases",
+  "buying": "Buying",
+  "settings": "Settings",
+  "myListings": "My listings",
+  "activeCount": "{count} active",
+  "@activeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ordersToShip": "Orders to ship",
+  "payoutAccount": "Payout account",
+  "notSet": "Not set",
+  "purchasesAndOrders": "Purchases & orders",
+  "addresses": "Addresses",
+  "notificationSettings": "Notification settings",
+  "adminPanel": "Admin panel",
+  "adminsOnly": "admins only",
+  "helpTermsPrivacy": "Help, terms & privacy",
+  "deleteAccount": "Delete account",
+  "editProfile": "Edit profile",
+  "verified": "Verified",
+  "memberSince": "Member since {year}",
+  "@memberSince": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "noRatingsYet": "No ratings yet",
+  "ratingSummary": "{pct}% positive · {count} ratings",
+  "@ratingSummary": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+# Imagi Auction server jobs without Cloud Functions (no Blaze plan needed).
+# Closes auctions, creates orders, sends push notifications, updates ratings.
+# See authentic_app/cron/run.js.
+#
+# Setup (once): repo Settings -> Secrets and variables -> Actions ->
+#   New repository secret FIREBASE_SERVICE_ACCOUNT = the whole JSON key from
+#   Firebase Console -> Project settings -> Service accounts -> Generate new private key.
+# Scheduled workflows only run from the default branch (main).
+name: Backend cron
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # GitHub may start it a few minutes late
+  workflow_dispatch: {}  # "Run workflow" button for testing
+
+concurrency:
+  group: backend-cron
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: authentic_app/cron
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: authentic_app/cron/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Run jobs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::error::Secret FIREBASE_SERVICE_ACCOUNT is not set (see the top of this file)."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json" node run.js
