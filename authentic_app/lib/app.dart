@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'domain/models/app_notification.dart';
+import 'l10n/l10n.dart';
 import 'providers/providers.dart';
 import 'router.dart';
-import 'ui/theme.dart';
+import 'ui/theme/app_theme.dart';
 
 class AuctionApp extends ConsumerStatefulWidget {
   const AuctionApp({super.key});
@@ -20,7 +21,7 @@ class _AuctionAppState extends ConsumerState<AuctionApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(notificationServiceProvider)
-          .init(onOpenListing: (id) => ref.read(routerProvider).push('/listing/$id'));
+          .init(onOpen: (route) => ref.read(routerProvider).push(route));
     });
   }
 
@@ -28,11 +29,14 @@ class _AuctionAppState extends ConsumerState<AuctionApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'Authentic',
+      title: 'Imagi Auction',
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       theme: buildAppTheme(),
       themeMode: ThemeMode.light,
+      // English / Indonesian, following the device language.
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) => NotificationBridge(child: child ?? const SizedBox()),
     );
   }
@@ -75,7 +79,7 @@ class _NotificationBridgeState extends ConsumerState<NotificationBridge> {
       if (n.read || n.createdAt.isBefore(_startedAt) || !_shown.add(n.id)) continue;
       ref
           .read(notificationServiceProvider)
-          .show(id: n.id.hashCode, title: n.title, body: n.body, listingId: n.listingId);
+          .show(id: n.id.hashCode, title: n.title, body: n.body, route: n.route);
     }
   }
 

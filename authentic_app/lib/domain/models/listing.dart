@@ -28,15 +28,34 @@ enum ItemCondition {
       values.firstWhere((c) => c.value == raw, orElse: () => ItemCondition.used);
 }
 
+/// How a listing sells: auction, fixed price (Buy It Now), or both.
+enum ListingFormat {
+  auction('auction', 'Auction'),
+  buyNow('buy_now', 'Buy It Now'),
+  both('both', 'Both');
+
+  const ListingFormat(this.value, this.label);
+  final String value;
+  final String label;
+
+  bool get hasAuction => this != buyNow;
+  bool get hasBuyNow => this != auction;
+
+  static ListingFormat parse(Object? raw, {bool hasBuyNowPrice = false}) => values.firstWhere(
+    (f) => f.value == raw,
+    orElse: () => hasBuyNowPrice ? ListingFormat.both : ListingFormat.auction,
+  );
+}
+
 /// Durations offered when listing. The 5-minute option exists so you can
 /// test auction endings during development and demos.
 enum AuctionDuration {
-  fiveMinutesTest(Duration(minutes: 5), '5 minutes (testing)'),
-  oneDay(Duration(days: 1), '1 day'),
-  threeDays(Duration(days: 3), '3 days'),
-  fiveDays(Duration(days: 5), '5 days'),
-  sevenDays(Duration(days: 7), '7 days'),
-  tenDays(Duration(days: 10), '10 days');
+  fiveMinutesTest(Duration(minutes: 5), '5 min (test)'),
+  oneDay(Duration(days: 1), '1d'),
+  threeDays(Duration(days: 3), '3d'),
+  fiveDays(Duration(days: 5), '5d'),
+  sevenDays(Duration(days: 7), '7d'),
+  tenDays(Duration(days: 10), '10d');
 
   const AuctionDuration(this.duration, this.label);
   final Duration duration;
@@ -71,6 +90,15 @@ class Listing {
     required this.watcherCount,
     required this.winnerId,
     required this.finalPrice,
+    this.format = ListingFormat.auction,
+    this.handlingDays,
+    this.location,
+    this.acceptsReturns = false,
+    this.returnDays = 7,
+    this.recentBidCount = 0,
+    this.recentBidWindowStart,
+    this.endedAt,
+    this.watcherIds = const [],
   });
 
   final String id;
@@ -102,6 +130,29 @@ class Listing {
   final String? winnerId;
   final int? finalPrice;
 
+  final ListingFormat format;
+
+  /// Days the seller needs to ship (null on listings made before this field).
+  final int? handlingDays;
+  final String? location;
+  final bool acceptsReturns;
+  final int returnDays;
+
+  /// Bids in the current 1-hour window (Trending "+12").
+  final int recentBidCount;
+  final DateTime? recentBidWindowStart;
+  final DateTime? endedAt;
+  final List<String> watcherIds;
+
+  bool get isBuyNowOnly => format == ListingFormat.buyNow;
+
+  /// Bids in the last hour, or 0 when the window has expired.
+  int recentBids(DateTime now) {
+    final start = recentBidWindowStart;
+    if (start == null || now.difference(start) > const Duration(hours: 1)) return 0;
+    return recentBidCount;
+  }
+
   bool get hasReserve => reservePrice != null;
   bool get isActive => status == ListingStatus.active;
   bool isExpired(DateTime now) => !now.isBefore(endsAt);
@@ -114,16 +165,16 @@ class Listing {
 
   /// Snapshot for the pure proxy engine (a Dart record).
   AuctionState get engineState => (
-        sellerId: sellerId,
-        isActive: isActive,
-        endsAt: endsAt,
-        startPrice: startPrice,
-        currentPrice: currentPrice,
-        bidCount: bidCount,
-        leaderId: leaderId,
-        leaderMax: leaderMax,
-        reservePrice: reservePrice,
-      );
+    sellerId: sellerId,
+    isActive: isActive,
+    endsAt: endsAt,
+    startPrice: startPrice,
+    currentPrice: currentPrice,
+    bidCount: bidCount,
+    leaderId: leaderId,
+    leaderMax: leaderMax,
+    reservePrice: reservePrice,
+  );
 
   int get minimumNextBid => ProxyBiddingEngine.minimumBid(engineState);
 
@@ -158,6 +209,15 @@ class Listing {
       watcherCount: _int(d['watcherCount']) ?? 0,
       winnerId: d['winnerId'] as String?,
       finalPrice: _int(d['finalPrice']),
+      format: ListingFormat.parse(d['format'], hasBuyNowPrice: d['buyNowPrice'] != null),
+      handlingDays: _int(d['handlingDays']),
+      location: d['location'] as String?,
+      acceptsReturns: d['acceptsReturns'] as bool? ?? false,
+      returnDays: _int(d['returnDays']) ?? 7,
+      recentBidCount: _int(d['recentBidCount']) ?? 0,
+      recentBidWindowStart: (d['recentBidWindowStart'] as Timestamp?)?.toDate(),
+      endedAt: (d['endedAt'] as Timestamp?)?.toDate(),
+      watcherIds: List<String>.from(d['watcherIds'] as List? ?? const []),
     );
   }
 }
@@ -175,8 +235,18 @@ class NewListing {
     required this.shippingCost,
     this.reservePrice,
     this.buyNowPrice,
+    this.format = ListingFormat.auction,
+    this.handlingDays = 2,
+    this.location = '',
+    this.acceptsReturns = false,
+    this.returnDays = 7,
   });
 
+  final ListingFormat format;
+  final int handlingDays;
+  final String location;
+  final bool acceptsReturns;
+  final int returnDays;
   final String title;
   final String description;
   final String category;

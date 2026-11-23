@@ -8,3 +8,6 @@ linter:
   rules:
     prefer_const_constructors: true
     prefer_final_locals: true
+
+formatter:
+  page_width: 100

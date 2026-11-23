@@ -1,37 +1,36 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imagi_auction/ui/auth/login_screen.dart';
-import 'package:imagi_auction/ui/theme.dart';
 
-/// Smoke tests for the login screen. They never reach Firebase: the form is
+import 'helpers.dart';
+
+/// Smoke tests for the sign-in screen. They never reach Firebase: the form is
 /// validated locally before the auth repository is used.
 void main() {
-  Future<void> pumpLogin(WidgetTester tester) => tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(theme: buildAppTheme(), home: const LoginScreen()),
-        ),
-      );
+  setUpAll(useTestFonts);
 
-  testWidgets('login screen shows the Authentic design', (tester) async {
+  Future<void> pumpLogin(WidgetTester tester) => pumpApp(tester, const LoginScreen());
+
+  testWidgets('sign in screen matches the wireframe', (tester) async {
     await pumpLogin(tester);
 
-    expect(find.text('Selamat Datang'), findsOneWidget);
-    expect(find.text('email'), findsOneWidget);
-    expect(find.text('password'), findsOneWidget);
-    expect(find.text('Masuk'), findsOneWidget);
-    expect(find.text('Lupa password?'), findsOneWidget);
-    expect(find.text('Register?'), findsOneWidget);
-    expect(find.bySemanticsLabel('Authentic'), findsOneWidget);
+    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.text('Sign in to bid, sell and track your orders'), findsOneWidget);
+    expect(find.text('Email'), findsOneWidget);
+    expect(find.text('Password'), findsOneWidget);
+    expect(find.text('Forgot password?'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(find.text('Register'), findsOneWidget);
+    expect(find.byTooltip('Show password'), findsOneWidget);
   });
 
   testWidgets('empty form shows validation errors', (tester) async {
     await pumpLogin(tester);
 
-    await tester.tap(find.text('Masuk'));
+    await tester.tap(find.text('Sign in'));
     await tester.pump();
 
     expect(find.text('Enter a valid email'), findsOneWidget);
-    expect(find.text('At least 6 characters'), findsOneWidget);
+    expect(find.text('Enter your password'), findsOneWidget);
   });
 }

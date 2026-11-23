@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
@@ -7,7 +9,10 @@ import '../data/api/catalog_api.dart';
 import '../data/api/currency_api.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/listing_repository.dart';
+import '../data/repositories/order_repository.dart';
+import '../data/repositories/storage_repository.dart';
 import '../data/repositories/user_repository.dart';
+import '../data/services/courier_rate_service.dart';
 import '../data/services/notification_service.dart';
 import '../domain/bidding/proxy_engine.dart';
 import '../domain/models/app_notification.dart';
@@ -15,6 +20,9 @@ import '../domain/models/app_user.dart';
 import '../domain/models/bid.dart';
 import '../domain/models/catalog_product.dart';
 import '../domain/models/listing.dart';
+import '../domain/models/order.dart';
+import '../domain/models/payout_account.dart';
+import '../domain/models/public_profile.dart';
 
 // =============================================================================
 // State management: Riverpod.
@@ -25,6 +33,10 @@ import '../domain/models/listing.dart';
 
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
+final functionsProvider = Provider<FirebaseFunctions>(
+  (ref) => FirebaseFunctions.instanceFor(region: 'asia-southeast1'),
+);
+final firebaseStorageProvider = Provider<FirebaseStorage>((ref) => FirebaseStorage.instance);
 
 final httpClientProvider = Provider<http.Client>((ref) {
   final client = http.Client();
@@ -39,14 +51,22 @@ final notificationServiceProvider = Provider<NotificationService>((ref) => Notif
 final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepository(ref.watch(firebaseAuthProvider), ref.watch(firestoreProvider)),
 );
-final userRepositoryProvider =
-    Provider<UserRepository>((ref) => UserRepository(ref.watch(firestoreProvider)));
-final listingRepositoryProvider =
-    Provider<ListingRepository>((ref) => ListingRepository(ref.watch(firestoreProvider)));
-final catalogApiProvider =
-    Provider<CatalogApi>((ref) => CatalogApi(ref.watch(httpClientProvider)));
-final currencyApiProvider =
-    Provider<CurrencyApi>((ref) => CurrencyApi(ref.watch(httpClientProvider)));
+final userRepositoryProvider = Provider<UserRepository>(
+  (ref) => UserRepository(ref.watch(firestoreProvider)),
+);
+final listingRepositoryProvider = Provider<ListingRepository>(
+  (ref) => ListingRepository(ref.watch(firestoreProvider)),
+);
+final orderRepositoryProvider = Provider<OrderRepository>(
+  (ref) => OrderRepository(ref.watch(firestoreProvider), ref.watch(functionsProvider)),
+);
+final storageRepositoryProvider = Provider<StorageRepository>(
+  (ref) => StorageRepository(ref.watch(firebaseStorageProvider)),
+);
+final catalogApiProvider = Provider<CatalogApi>((ref) => CatalogApi(ref.watch(httpClientProvider)));
+final currencyApiProvider = Provider<CurrencyApi>(
+  (ref) => CurrencyApi(ref.watch(httpClientProvider)),
+);
 
 // --- Auth / current user -------------------------------------------------------
 
@@ -73,12 +93,23 @@ final activeListingsProvider = StreamProvider<List<Listing>>(
   (ref) => ref.watch(listingRepositoryProvider).watchActive(),
 );
 
-final listingProvider = StreamProvider.family<Listing?, String>(
+final listingProvider = StreamProvider.autoDispose.family<Listing?, String>(
   (ref, id) => ref.watch(listingRepositoryProvider).watchListing(id),
 );
 
-final bidsProvider = StreamProvider.family<List<Bid>, String>(
+final bidsProvider = StreamProvider.autoDispose.family<List<Bid>, String>(
   (ref, id) => ref.watch(listingRepositoryProvider).watchBids(id),
+);
+
+/// My own hidden maximum on a listing (only I can read it).
+final myMaxProvider = StreamProvider.autoDispose.family<int?, String>((ref, listingId) {
+  final uid = _uid(ref);
+  if (uid == null) return Stream.value(null);
+  return ref.watch(listingRepositoryProvider).watchMyMax(listingId, uid);
+});
+
+final publicProfileProvider = StreamProvider.autoDispose.family<PublicProfile?, String>(
+  (ref, uid) => ref.watch(userRepositoryProvider).watchPublicProfile(uid),
 );
 
 final myListingsProvider = StreamProvider<List<Listing>>((ref) {
@@ -93,6 +124,45 @@ final myBidsProvider = StreamProvider<List<Listing>>((ref) {
   return ref.watch(listingRepositoryProvider).watchBidOn(uid);
 });
 
+/// Listings I won (by bidding or Buy It Now).
+final wonListingsProvider = StreamProvider<List<Listing>>((ref) {
+  final uid = _uid(ref);
+  if (uid == null) return Stream.value(const []);
+  return ref.watch(listingRepositoryProvider).watchWonBy(uid);
+});
+
+// --- Orders --------------------------------------------------------------------
+
+final orderProvider = StreamProvider.autoDispose.family<AuctionOrder?, String>(
+  (ref, id) => ref.watch(orderRepositoryProvider).watchOrder(id),
+);
+
+final myPurchasesProvider = StreamProvider<List<AuctionOrder>>((ref) {
+  final uid = _uid(ref);
+  if (uid == null) return Stream.value(const []);
+  return ref.watch(orderRepositoryProvider).watchPurchases(uid);
+});
+
+final mySalesProvider = StreamProvider<List<AuctionOrder>>((ref) {
+  final uid = _uid(ref);
+  if (uid == null) return Stream.value(const []);
+  return ref.watch(orderRepositoryProvider).watchSales(uid);
+});
+
+final payoutProvider = StreamProvider<PayoutAccount?>((ref) {
+  final uid = _uid(ref);
+  if (uid == null) return Stream.value(null);
+  return ref.watch(userRepositoryProvider).watchPayout(uid);
+});
+
+final addressesProvider = StreamProvider<List<Address>>((ref) {
+  final uid = _uid(ref);
+  if (uid == null) return Stream.value(const []);
+  return ref.watch(userRepositoryProvider).watchAddresses(uid);
+});
+
+final courierRateServiceProvider = Provider<CourierRateService>((ref) => const FixedCourierRates());
+
 final allListingsProvider = StreamProvider<List<Listing>>(
   (ref) => ref.watch(listingRepositoryProvider).watchAll(),
 );
@@ -103,6 +173,25 @@ final notificationsProvider = StreamProvider<List<AppNotification>>((ref) {
   final uid = _uid(ref);
   if (uid == null) return Stream.value(const []);
   return ref.watch(userRepositoryProvider).watchNotifications(uid);
+});
+
+/// Notifications screen paging: 30 per page.
+class NotificationsLimit extends Notifier<int> {
+  static const pageSize = 30;
+  @override
+  int build() => pageSize;
+  void loadMore() => state += pageSize;
+}
+
+final notificationsLimitProvider = NotifierProvider<NotificationsLimit, int>(
+  NotificationsLimit.new,
+);
+
+final notificationsPageProvider = StreamProvider.autoDispose<List<AppNotification>>((ref) {
+  final uid = _uid(ref);
+  if (uid == null) return Stream.value(const []);
+  final limit = ref.watch(notificationsLimitProvider);
+  return ref.watch(userRepositoryProvider).watchNotificationsPage(uid, limit);
 });
 
 final unreadCountProvider = Provider<int>(
@@ -126,7 +215,7 @@ final categoriesProvider = FutureProvider<List<CatalogCategory>>((ref) async {
   }
 });
 
-final catalogSearchProvider = FutureProvider.family<List<CatalogProduct>, String>(
+final catalogSearchProvider = FutureProvider.autoDispose.family<List<CatalogProduct>, String>(
   (ref, query) => ref.watch(catalogApiProvider).search(query),
 );
 
@@ -153,19 +242,83 @@ class HomeFilterNotifier extends Notifier<HomeFilter> {
   void setCategory(String? c) => state = HomeFilter(query: state.query, category: c);
 }
 
-final homeFilterProvider =
-    NotifierProvider<HomeFilterNotifier, HomeFilter>(HomeFilterNotifier.new);
+final homeFilterProvider = NotifierProvider<HomeFilterNotifier, HomeFilter>(HomeFilterNotifier.new);
 
-final filteredListingsProvider = Provider<AsyncValue<List<Listing>>>((ref) {
-  final f = ref.watch(homeFilterProvider);
-  final q = f.query.trim().toLowerCase();
-  return ref.watch(activeListingsProvider).whenData(
-        (list) => list
-            .where((l) => f.category == null || l.category == f.category)
-            .where((l) => q.isEmpty || l.title.toLowerCase().contains(q))
-            .toList(),
+/// How many Home feed items to load (grows by [pageSize] on scroll).
+class HomeFeedLimit extends Notifier<int> {
+  static const pageSize = 20;
+  @override
+  int build() {
+    ref.watch(homeFilterProvider.select((f) => f.category)); // reset on category change
+    return pageSize;
+  }
+
+  void loadMore() => state += pageSize;
+}
+
+final homeFeedLimitProvider = NotifierProvider<HomeFeedLimit, int>(HomeFeedLimit.new);
+
+/// Home "All auctions": live, paged, category filtered on the server and
+/// title-searched on the client (Firestore has no substring search).
+final homeFeedProvider = StreamProvider<({List<Listing> items, bool hasMore})>((ref) {
+  final category = ref.watch(homeFilterProvider.select((f) => f.category));
+  final limit = ref.watch(homeFeedLimitProvider);
+  return ref
+      .watch(listingRepositoryProvider)
+      .watchActivePage(category: category, limit: limit)
+      .map((list) => (items: list, hasMore: list.length >= limit));
+});
+
+final filteredHomeFeedProvider = Provider<AsyncValue<({List<Listing> items, bool hasMore})>>((ref) {
+  final q = ref.watch(homeFilterProvider.select((f) => f.query)).trim().toLowerCase();
+  return ref
+      .watch(homeFeedProvider)
+      .whenData(
+        (page) => (
+          items: q.isEmpty
+              ? page.items
+              : page.items.where((l) => l.title.toLowerCase().contains(q)).toList(),
+          hasMore: page.hasMore,
+        ),
       );
 });
+
+final endingSoonProvider = StreamProvider.autoDispose<List<Listing>>(
+  (ref) => ref.watch(listingRepositoryProvider).watchEndingSoon(),
+);
+
+// --- Trending --------------------------------------------------------------------
+
+class TrendingSortNotifier extends Notifier<TrendingSort> {
+  @override
+  TrendingSort build() => TrendingSort.mostBids;
+  void select(TrendingSort s) => state = s;
+}
+
+final trendingSortProvider = NotifierProvider<TrendingSortNotifier, TrendingSort>(
+  TrendingSortNotifier.new,
+);
+
+final trendingProvider = StreamProvider.autoDispose.family<List<Listing>, TrendingSort>(
+  (ref, sort) => ref.watch(listingRepositoryProvider).watchTrending(sort),
+);
+
+/// Top 4 categories by number of live auctions, counted on the client from
+/// the active listings already loaded.
+final hotCategoriesProvider = Provider<AsyncValue<List<({String slug, int count, String? image})>>>(
+  (ref) => ref.watch(activeListingsProvider).whenData((list) {
+    final now = DateTime.now();
+    final counts = <String, ({int count, String? image})>{};
+    for (final l in list.where((l) => l.isLive(now))) {
+      final prev = counts[l.category];
+      counts[l.category] = (count: (prev?.count ?? 0) + 1, image: prev?.image ?? l.thumbnail);
+    }
+    final sorted = counts.entries.toList()..sort((a, b) => b.value.count.compareTo(a.value.count));
+    return [
+      for (final e in sorted.take(4)) (slug: e.key, count: e.value.count, image: e.value.image),
+    ];
+  }),
+);
 
 // --- Bid controller (AsyncValue state for the bid button) -------------------------
 
@@ -178,18 +331,17 @@ class BidController extends Notifier<AsyncValue<BidDecision?>> {
     if (user == null) return null;
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => ref.read(listingRepositoryProvider).placeBid(
-            listingId: listingId,
-            bidder: user,
-            maxAmount: maxAmount,
-          ),
+      () => ref
+          .read(listingRepositoryProvider)
+          .placeBid(listingId: listingId, bidder: user, maxAmount: maxAmount),
     );
     return state.value;
   }
 }
 
-final bidControllerProvider =
-    NotifierProvider<BidController, AsyncValue<BidDecision?>>(BidController.new);
+final bidControllerProvider = NotifierProvider<BidController, AsyncValue<BidDecision?>>(
+  BidController.new,
+);
 
 // --- Auction closer -----------------------------------------------------------------
 

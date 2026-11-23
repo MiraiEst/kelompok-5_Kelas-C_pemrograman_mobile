@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../../domain/models/app_notification.dart';
 import '../../firebase_options.dart';
 
 /// Background/terminated FCM messages. With a `notification` payload the OS
@@ -18,7 +19,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 ///   the system tray.
 /// * Foreground: FCM does not show a banner on Android, so we display it with
 ///   flutter_local_notifications.
-/// * Tapping any notification opens the related listing.
+/// * Tapping any notification opens the related screen (listing, checkout,
+///   order), whether the app was closed, in the background or open.
 class NotificationService {
   final _local = FlutterLocalNotificationsPlugin();
   final _messaging = FirebaseMessaging.instance;
@@ -31,9 +33,7 @@ class NotificationService {
     importance: Importance.high,
   );
 
-  Future<void> init({
-    required void Function(String listingId) onOpenListing,
-  }) async {
+  Future<void> init({required void Function(String route) onOpen}) async {
     if (_initialized) return;
     _initialized = true;
 
@@ -48,15 +48,13 @@ class NotificationService {
         iOS: DarwinInitializationSettings(),
       ),
       onDidReceiveNotificationResponse: (response) {
-        final id = response.payload;
-        if (id != null && id.isNotEmpty) onOpenListing(id);
+        final route = response.payload;
+        if (route != null && route.startsWith('/')) onOpen(route);
       },
     );
 
     final android = _local
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     await android?.createNotificationChannel(_channel);
     await android?.requestNotificationsPermission(); // Android 13+
 
@@ -79,20 +77,29 @@ class NotificationService {
         id: m.messageId.hashCode,
         title: n.title ?? 'Imagi Auction',
         body: n.body ?? '',
-        listingId: m.data['listingId'] as String?,
+        route: _route(m.data),
       );
     });
 
     // Tapped while app was in background.
     FirebaseMessaging.onMessageOpenedApp.listen((m) {
-      final id = m.data['listingId'] as String?;
-      if (id != null) onOpenListing(id);
+      final route = _route(m.data);
+      if (route != null) onOpen(route);
     });
 
     // Tapped while app was terminated.
     final initial = await _messaging.getInitialMessage();
-    final initialId = initial?.data['listingId'] as String?;
-    if (initialId != null) onOpenListing(initialId);
+    final initialRoute = initial == null ? null : _route(initial.data);
+    if (initialRoute != null) onOpen(initialRoute);
+  }
+
+  static String? _route(Map<String, dynamic> data) {
+    String? s(String k) => (data[k] as String?)?.isEmpty ?? true ? null : data[k] as String;
+    return notificationRoute(
+      NotificationType.parse(data['type']),
+      listingId: s('listingId'),
+      orderId: s('orderId'),
+    );
   }
 
   // getToken/onTokenRefresh are deprecated in favour of register()/onRegistered,
@@ -109,7 +116,7 @@ class NotificationService {
     required int id,
     required String title,
     required String body,
-    String? listingId,
+    String? route,
   }) async {
     if (kIsWeb) {
       debugPrint('Notification: $title — $body');
@@ -119,7 +126,7 @@ class NotificationService {
       id: id,
       title: title,
       body: body,
-      payload: listingId,
+      payload: route,
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           _channel.id,

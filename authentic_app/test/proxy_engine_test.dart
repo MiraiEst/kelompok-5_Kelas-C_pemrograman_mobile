@@ -13,18 +13,17 @@ AuctionState state({
   int? reserve,
   bool active = true,
   DateTime? endsAt,
-}) =>
-    (
-      sellerId: 'seller',
-      isActive: active,
-      endsAt: endsAt ?? _now.add(const Duration(days: 1)),
-      startPrice: start,
-      currentPrice: current,
-      bidCount: bids,
-      leaderId: leader,
-      leaderMax: leaderMax,
-      reservePrice: reserve,
-    );
+}) => (
+  sellerId: 'seller',
+  isActive: active,
+  endsAt: endsAt ?? _now.add(const Duration(days: 1)),
+  startPrice: start,
+  currentPrice: current,
+  bidCount: bids,
+  leaderId: leader,
+  leaderMax: leaderMax,
+  reservePrice: reserve,
+);
 
 BidAccepted accepted(BidDecision d) {
   expect(d, isA<BidAccepted>());

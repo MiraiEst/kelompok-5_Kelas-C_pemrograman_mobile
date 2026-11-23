@@ -17,26 +17,23 @@ class CurrencyApi {
 
   /// Rates for 1 unit of [base], e.g. base IDR -> {USD: 0.000061, ...}.
   /// Cached for an hour (rates only change daily).
-  Future<Map<String, double>> latest({
-    required String base,
-    required List<String> symbols,
-  }) async {
+  Future<Map<String, double>> latest({required String base, required List<String> symbols}) async {
     final key = '$base:${symbols.join(',')}';
     final hit = _cache[key];
     if (hit != null && DateTime.now().difference(hit.fetchedAt) < const Duration(hours: 1)) {
       return hit.rates;
     }
-    final uri = Uri.parse('$_base/latest').replace(queryParameters: {
-      'base': base,
-      'symbols': symbols.join(','),
-    });
+    final uri = Uri.parse(
+      '$_base/latest',
+    ).replace(queryParameters: {'base': base, 'symbols': symbols.join(',')});
     final res = await _client.get(uri).timeout(const Duration(seconds: 10));
     if (res.statusCode != 200) {
       throw http.ClientException('Frankfurter error ${res.statusCode}', uri);
     }
     final json = jsonDecode(res.body) as Map<String, dynamic>;
-    final rates = (json['rates'] as Map<String, dynamic>)
-        .map((k, v) => MapEntry(k, (v as num).toDouble()));
+    final rates = (json['rates'] as Map<String, dynamic>).map(
+      (k, v) => MapEntry(k, (v as num).toDouble()),
+    );
     _cache[key] = (fetchedAt: DateTime.now(), rates: rates);
     return rates;
   }

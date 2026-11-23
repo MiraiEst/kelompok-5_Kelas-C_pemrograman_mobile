@@ -37,9 +37,9 @@ enum AcceptedKind {
   final String message;
 
   bool get bidderLeads => switch (this) {
-        firstBid || newLeader || raisedOwnMax => true,
-        outbidByProxy || tieLostToEarlier => false,
-      };
+    firstBid || newLeader || raisedOwnMax => true,
+    outbidByProxy || tieLostToEarlier => false,
+  };
 }
 
 final class BidAccepted extends BidDecision {
@@ -124,10 +124,9 @@ final class CannotLowerMax extends RejectReason {
 /// inside a Firestore transaction by the repository.
 abstract final class ProxyBiddingEngine {
   /// Minimum maximum-bid a new bidder must enter.
-  static int minimumBid(AuctionState s) =>
-      (s.bidCount == 0 || s.leaderId == null)
-          ? s.startPrice
-          : s.currentPrice + bidIncrement(s.currentPrice);
+  static int minimumBid(AuctionState s) => (s.bidCount == 0 || s.leaderId == null)
+      ? s.startPrice
+      : s.currentPrice + bidIncrement(s.currentPrice);
 
   static BidDecision evaluate({
     required AuctionState state,
@@ -147,9 +146,7 @@ abstract final class ProxyBiddingEngine {
 
     // When any max >= reserve, the price jumps to at least the reserve.
     int withReserve(int price, int leaderMax) =>
-        (reserve != null && leaderMax >= reserve && price < reserve)
-            ? reserve
-            : price;
+        (reserve != null && leaderMax >= reserve && price < reserve) ? reserve : price;
     bool reserveMet(int price) => reserve == null || price >= reserve;
 
     final leaderId = state.leaderId;

@@ -16,7 +16,9 @@ class AdminScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isAdmin = ref.watch(isAdminProvider);
     if (!isAdmin) {
-      return const Scaffold(body: EmptyState(icon: Icons.lock, text: 'Admins only.'));
+      return const Scaffold(
+        body: EmptyState(icon: Icons.lock, text: 'Admins only.'),
+      );
     }
     final all = ref.watch(allListingsProvider);
 

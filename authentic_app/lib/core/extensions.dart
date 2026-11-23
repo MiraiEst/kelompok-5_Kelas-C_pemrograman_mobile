@@ -2,11 +2,7 @@ import 'package:intl/intl.dart';
 
 /// Advanced Dart: extension methods on built-in types.
 
-final _rupiah = NumberFormat.currency(
-  locale: 'id_ID',
-  symbol: 'Rp ',
-  decimalDigits: 0,
-);
+final _rupiah = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
 extension RupiahFormat on int {
   /// 125000 -> "Rp 125.000"
@@ -26,6 +22,27 @@ extension CountdownFormat on Duration {
       (0, > 0, _) => '${h}h ${m}m',
       _ => '${m}m ${s}s',
     };
+  }
+}
+
+extension ClockFormat on Duration {
+  /// Countdown clock: "00:14:05", or "2d 04:10:00" when more than a day.
+  String toClock() {
+    if (isNegative || this == Duration.zero) return '00:00:00';
+    String two(int n) => n.toString().padLeft(2, '0');
+    final hms =
+        '${two(inHours.remainder(24))}:${two(inMinutes.remainder(60))}:'
+        '${two(inSeconds.remainder(60))}';
+    return inDays > 0 ? '${inDays}d $hms' : hms;
+  }
+
+  /// Short "3h 20m" / "2d 4h" / "42m" for meta rows.
+  String toShort() {
+    if (isNegative || this == Duration.zero) return 'Ended';
+    if (inDays > 0) return '${inDays}d ${inHours.remainder(24)}h';
+    if (inHours > 0) return '${inHours}h ${inMinutes.remainder(60)}m';
+    if (inMinutes > 0) return '${inMinutes}m';
+    return '${inSeconds}s';
   }
 }
 

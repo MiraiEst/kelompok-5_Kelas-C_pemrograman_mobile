@@ -20,14 +20,14 @@ class CatalogProduct {
   final List<String> images;
 
   factory CatalogProduct.fromJson(Map<String, dynamic> j) => CatalogProduct(
-        id: (j['id'] as num).toInt(),
-        title: j['title'] as String? ?? '',
-        description: j['description'] as String? ?? '',
-        category: j['category'] as String? ?? 'other',
-        priceUsd: (j['price'] as num?)?.toDouble() ?? 0,
-        thumbnail: j['thumbnail'] as String? ?? '',
-        images: List<String>.from(j['images'] as List? ?? const []),
-      );
+    id: (j['id'] as num).toInt(),
+    title: j['title'] as String? ?? '',
+    description: j['description'] as String? ?? '',
+    category: j['category'] as String? ?? 'other',
+    priceUsd: (j['price'] as num?)?.toDouble() ?? 0,
+    thumbnail: j['thumbnail'] as String? ?? '',
+    images: List<String>.from(j['images'] as List? ?? const []),
+  );
 }
 
 class CatalogCategory {
@@ -38,9 +38,11 @@ class CatalogCategory {
   /// DummyJSON returns objects `{slug, name, url}`; older versions returned
   /// plain strings. Pattern matching handles both shapes.
   static CatalogCategory? tryParse(Object? raw) => switch (raw) {
-        {'slug': final String slug, 'name': final String name} =>
-          CatalogCategory(slug: slug, name: name),
-        final String s => CatalogCategory(slug: s, name: s),
-        _ => null,
-      };
+    {'slug': final String slug, 'name': final String name} => CatalogCategory(
+      slug: slug,
+      name: name,
+    ),
+    final String s => CatalogCategory(slug: s, name: s),
+    _ => null,
+  };
 }

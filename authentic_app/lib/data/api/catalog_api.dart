@@ -34,11 +34,13 @@ class CatalogApi {
   }
 
   Future<List<CatalogProduct>> search(String query) async {
-    final uri = Uri.parse('$_base/products/search').replace(queryParameters: {
-      'q': query,
-      'limit': '20',
-      'select': 'title,description,category,price,thumbnail,images',
-    });
+    final uri = Uri.parse('$_base/products/search').replace(
+      queryParameters: {
+        'q': query,
+        'limit': '20',
+        'select': 'title,description,category,price,thumbnail,images',
+      },
+    );
     final res = await _client.get(uri).timeout(const Duration(seconds: 10));
     _check(res);
     final body = res.body;

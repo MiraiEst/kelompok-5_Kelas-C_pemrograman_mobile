@@ -14,19 +14,16 @@ sealed class Result<T> {
     }
   }
 
-  R fold<R>({
-    required R Function(T value) ok,
-    required R Function(Object error) err,
-  }) =>
+  R fold<R>({required R Function(T value) ok, required R Function(Object error) err}) =>
       switch (this) {
         Ok(:final value) => ok(value),
         Err(:final error) => err(error),
       };
 
   T? get valueOrNull => switch (this) {
-        Ok(:final value) => value,
-        Err() => null,
-      };
+    Ok(:final value) => value,
+    Err() => null,
+  };
 }
 
 final class Ok<T> extends Result<T> {
