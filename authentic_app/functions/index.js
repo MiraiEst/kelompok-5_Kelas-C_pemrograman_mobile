@@ -1,6 +1,10 @@
 /**
  * Cloud Functions for Imagi Auction (needs the Firebase Blaze plan).
  *
+ * Without Blaze, cron/run.js (GitHub Actions) does the non-payment jobs below
+ * and "Delete account" runs in the app. Only deploy these if you switch to
+ * Blaze, and then disable .github/workflows/backend-cron.yml.
+ *
  * Notifications
  *   pushOnNotification     users/{uid}/notifications doc -> FCM push (respects
  *                          users/{uid}.notificationPrefs)

@@ -9,6 +9,7 @@ import {
 } from "@firebase/rules-unit-testing";
 import {
   Timestamp,
+  deleteDoc,
   doc,
   getDoc,
   serverTimestamp,
@@ -174,6 +175,23 @@ describe("user profiles", () => {
     await assertFails(getDoc(doc(bob, "users/alice/addresses/a1")));
     await assertFails(getDoc(doc(bob, "users/alice/private/payout")));
     await assertSucceeds(getDoc(doc(verified("alice"), "users/alice/addresses/a1")));
+  });
+});
+
+describe("delete account (in the app)", () => {
+  test("you can delete your own profile and payout account, not someone else's", async () => {
+    await seed((db) => Promise.all([
+      setDoc(doc(db, "users/alice"), {displayName: "alice", role: "user"}),
+      setDoc(doc(db, "users/alice/private/payout"), {bankName: "BCA", accountNumber: "1", accountHolder: "A"}),
+    ]));
+    await assertFails(deleteDoc(doc(verified("bob"), "users/alice/private/payout")));
+    await assertFails(deleteDoc(doc(verified("bob"), "users/alice")));
+    await assertSucceeds(deleteDoc(doc(verified("alice"), "users/alice/private/payout")));
+    await assertSucceeds(deleteDoc(doc(verified("alice"), "users/alice")));
+  });
+
+  test("public profiles stay server-only", async () => {
+    await assertFails(setDoc(doc(verified("alice"), "publicProfiles/alice"), {ratingCount: 99}));
   });
 });
 

@@ -87,6 +87,41 @@ class AuthRepository {
     });
   }
 
+  /// True for accounts that sign in with email + password (vs Google).
+  bool get usesPassword =>
+      _auth.currentUser?.providerData.any((p) => p.providerId == 'password') ?? false;
+
+  /// Firebase only deletes accounts that signed in recently, so confirm the
+  /// login again right before deleting. Throws FirebaseAuthException
+  /// (e.g. 'wrong-password' / 'invalid-credential') if it fails.
+  Future<void> reauthenticate({String? password}) async {
+    final user = _auth.currentUser;
+    if (user == null) throw StateError('Not signed in.');
+    if (usesPassword) {
+      await user.reauthenticateWithCredential(
+        EmailAuthProvider.credential(email: user.email ?? '', password: password ?? ''),
+      );
+    } else if (kIsWeb) {
+      await user.reauthenticateWithPopup(GoogleAuthProvider());
+    } else {
+      final google = GoogleSignIn.instance;
+      if (!_googleReady) {
+        await google.initialize();
+        _googleReady = true;
+      }
+      final account = await google.authenticate();
+      await user.reauthenticateWithCredential(
+        GoogleAuthProvider.credential(idToken: account.authentication.idToken),
+      );
+    }
+  }
+
+  /// Deletes the Firebase Auth login. Call after the user's data is deleted.
+  Future<void> deleteLogin() async {
+    await _auth.currentUser?.delete();
+    if (!kIsWeb) await GoogleSignIn.instance.signOut().catchError((_) {});
+  }
+
   Future<void> sendPasswordReset(String email) => _auth.sendPasswordResetEmail(email: email.trim());
 
   Future<void> resendVerification() async => _auth.currentUser?.sendEmailVerification();

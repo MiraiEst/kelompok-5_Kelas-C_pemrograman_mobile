@@ -37,12 +37,14 @@ service cloud.firestore {
                         && request.resource.data.displayName is string
                         && request.resource.data.displayName.size() >= 3)
         || isAdmin();
-      allow delete: if isAdmin();
+      // "Delete account" in the app removes the profile itself (no Cloud Functions).
+      allow delete: if (signedIn() && uid() == userId) || isAdmin();
 
       // Payout bank account: owner and admins only.
       match /private/{docId} {
         allow read: if signedIn() && (uid() == userId || isAdmin());
-        allow write: if signedIn() && uid() == userId && docId == 'payout'
+        allow delete: if signedIn() && uid() == userId;
+        allow create, update: if signedIn() && uid() == userId && docId == 'payout'
           && request.resource.data.keys().hasOnly(['bankName', 'accountNumber', 'accountHolder'])
           && request.resource.data.accountNumber is string;
       }
@@ -88,7 +90,8 @@ service cloud.firestore {
 
     // ------------------------------------------------------ public profiles
     // Reputation shown on listings (rating, member since). Written only by
-    // Cloud Functions (Admin SDK), so clients can never fake their score.
+    // the server (Admin SDK: cron/ job or Cloud Functions), so clients can
+    // never fake their score.
     match /publicProfiles/{userId} {
       allow read: if signedIn();
       allow write: if false;

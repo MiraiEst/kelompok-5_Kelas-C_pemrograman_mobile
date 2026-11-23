@@ -1,4 +1,4 @@
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +9,7 @@ import '../../l10n/l10n.dart';
 import '../../domain/models/app_user.dart';
 import '../../domain/models/listing.dart';
 import '../../domain/models/order.dart';
+import '../../data/repositories/user_repository.dart';
 import '../../providers/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -70,20 +71,60 @@ class AccountScreen extends ConsumerWidget {
     );
     confirm.dispose();
     if (second != true || !context.mounted) return;
+
+    final auth = ref.read(authRepositoryProvider);
+    final uid = ref.read(authStateProvider).value?.uid;
+    if (uid == null) return;
+    // Firebase requires a fresh login before deleting: password or Google again.
+    String? password;
+    if (auth.usesPassword) {
+      password = await _askPassword(context);
+      if (password == null || !context.mounted) return;
+    }
     try {
-      await ref.read(functionsProvider).httpsCallable('deleteAccount').call<void>();
-      await ref.read(authRepositoryProvider).signOut();
-    } on FirebaseFunctionsException catch (e) {
+      await auth.reauthenticate(password: password);
+      await ref.read(userRepositoryProvider).deleteMyData(uid);
+      await auth.deleteLogin();
+      if (context.mounted) showSnack(context, 'Your account was deleted.');
+    } on AccountDeletionBlocked catch (e) {
+      if (context.mounted) showSnack(context, e.message);
+    } on FirebaseAuthException catch (e) {
       if (context.mounted) {
         showSnack(context, switch (e.code) {
-          'failed-precondition' => e.message ?? 'Finish your open orders first.',
-          'not-found' => 'Account deletion needs the Cloud Functions to be deployed.',
+          'wrong-password' || 'invalid-credential' => 'Wrong password. Nothing was deleted.',
+          'popup-closed-by-user' || 'cancelled-popup-request' => 'Cancelled. Nothing was deleted.',
           _ => e.message ?? 'Could not delete the account.',
         });
       }
     } catch (e) {
       if (context.mounted) showSnack(context, friendlyError(e));
     }
+  }
+
+  Future<String?> _askPassword(BuildContext context) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Enter your password'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          obscureText: true,
+          decoration: const InputDecoration(hintText: 'Password'),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: const Text('Delete account'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return (result == null || result.isEmpty) ? null : result;
   }
 
   @override

@@ -77,6 +77,8 @@ class _NotificationBridgeState extends ConsumerState<NotificationBridge> {
   void _showNew(List<AppNotification> items) {
     for (final n in items) {
       if (n.read || n.createdAt.isBefore(_startedAt) || !_shown.add(n.id)) continue;
+      // The phone already schedules its own "ending soon" reminders.
+      if (n.type == NotificationType.endingSoon) continue;
       ref
           .read(notificationServiceProvider)
           .show(id: n.id.hashCode, title: n.title, body: n.body, route: n.route);
@@ -89,6 +91,9 @@ class _NotificationBridgeState extends ConsumerState<NotificationBridge> {
       final uid = next.value?.uid;
       if (uid != null) _registerToken(uid);
       if (uid == null) _tokenSavedFor = null;
+    });
+    ref.listen(endingSoonRemindersProvider, (_, next) {
+      if (next != null) ref.read(notificationServiceProvider).scheduleEndingSoon(next);
     });
     ref.listen(notificationsProvider, (_, next) {
       final items = next.value;

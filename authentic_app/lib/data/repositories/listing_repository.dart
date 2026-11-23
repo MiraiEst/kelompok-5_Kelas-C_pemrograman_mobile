@@ -113,6 +113,10 @@ class ListingRepository {
       .map(_map)
       .map((l) => l..sort((a, b) => a.endsAt.compareTo(b.endsAt)));
 
+  /// Listings whose watcherIds contain [uid] (my watchlist, any status).
+  Stream<List<Listing>> watchWatchedBy(String uid) =>
+      _listings.where('watcherIds', arrayContains: uid).snapshots().map(_map);
+
   Stream<List<Listing>> watchWonBy(String uid) => _listings
       .where('winnerId', isEqualTo: uid)
       .snapshots()

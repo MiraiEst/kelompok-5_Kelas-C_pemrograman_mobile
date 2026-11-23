@@ -2,8 +2,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../domain/models/app_notification.dart';
+import '../../domain/models/listing.dart';
 import '../../firebase_options.dart';
 
 /// Background/terminated FCM messages. With a `notification` payload the OS
@@ -15,8 +18,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 /// Push notifications: Firebase Cloud Messaging + local notifications.
 ///
-/// * Background / closed app: FCM pushes sent by the Cloud Function appear in
-///   the system tray.
+/// * Background / closed app: FCM pushes sent by the server (cron/ job or
+///   Cloud Functions) appear in the system tray.
+/// * "Ending soon" reminders are scheduled on the device itself.
 /// * Foreground: FCM does not show a banner on Android, so we display it with
 ///   flutter_local_notifications.
 /// * Tapping any notification opens the related screen (listing, checkout,
@@ -112,6 +116,74 @@ class NotificationService {
       // ignore: deprecated_member_use
       kIsWeb ? const Stream.empty() : _messaging.onTokenRefresh;
 
+  /// Schedules "1 hour left" / "10 minutes left" reminders on this device for
+  /// [listings] (active auctions I watch or bid on) and cancels reminders for
+  /// everything else. Runs on the phone, so it needs no server and fires on
+  /// time even when the app is closed. Android/iOS only.
+  Future<void> scheduleEndingSoon(List<Listing> listings) async {
+    if (kIsWeb || !_initialized) return;
+    if (!_tzReady) {
+      tzdata.initializeTimeZones();
+      _tzReady = true;
+    }
+    final now = DateTime.now();
+    final wanted = <int, ({DateTime at, String title, String body, String route})>{};
+    for (final l in listings) {
+      for (final (minutes, label) in [(60, '1 hour left'), (10, '10 minutes left')]) {
+        final at = l.endsAt.subtract(Duration(minutes: minutes));
+        if (!at.isAfter(now)) continue;
+        wanted[_reminderId(l.id, minutes)] = (
+          at: at,
+          title: label,
+          body: '"${l.title}" ends soon. Check the price and place your final bid.',
+          route: '/listing/${l.id}',
+        );
+      }
+    }
+    try {
+      // Only reminders are scheduled (pushes are shown immediately), so every
+      // pending request not in [wanted] is an outdated reminder.
+      for (final p in await _local.pendingNotificationRequests()) {
+        if (!wanted.containsKey(p.id)) await _local.cancel(id: p.id);
+      }
+      for (final MapEntry(key: id, value: r) in wanted.entries) {
+        await _local.zonedSchedule(
+          id: id,
+          title: r.title,
+          body: r.body,
+          payload: r.route,
+          scheduledDate: tz.TZDateTime.from(r.at.toUtc(), tz.UTC),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          notificationDetails: _details,
+        );
+      }
+    } catch (e) {
+      debugPrint('Could not schedule ending-soon reminders: $e');
+    }
+  }
+
+  bool _tzReady = false;
+
+  /// Stable id per listing + reminder (String.hashCode may change between runs).
+  static int _reminderId(String listingId, int minutes) {
+    var h = minutes;
+    for (final c in listingId.codeUnits) {
+      h = (h * 31 + c) & 0x3fffffff;
+    }
+    return h;
+  }
+
+  NotificationDetails get _details => NotificationDetails(
+    android: AndroidNotificationDetails(
+      _channel.id,
+      _channel.name,
+      channelDescription: _channel.description,
+      importance: Importance.high,
+      priority: Priority.high,
+    ),
+    iOS: const DarwinNotificationDetails(),
+  );
+
   Future<void> show({
     required int id,
     required String title,
@@ -127,16 +199,7 @@ class NotificationService {
       title: title,
       body: body,
       payload: route,
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channel.id,
-          _channel.name,
-          channelDescription: _channel.description,
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
-        iOS: const DarwinNotificationDetails(),
-      ),
+      notificationDetails: _details,
     );
   }
 }

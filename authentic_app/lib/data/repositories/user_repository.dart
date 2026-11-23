@@ -146,4 +146,73 @@ class UserRepository {
       }
     });
   }
+
+  /// Deletes the signed-in user's own data, in the app (no Cloud Functions).
+  /// Refuses while orders are open or live auctions have bids. Ends live
+  /// listings without bids, removes the user from watchlists, then deletes the
+  /// profile and its subcollections. The server job (cron/) later removes
+  /// publicProfiles/{uid}. Photos in Supabase are not deleted.
+  Future<void> deleteMyData(String uid) async {
+    const done = ['completed', 'cancelled'];
+    final orders = _db.collection('orders');
+    final [asBuyer, asSeller] = await Future.wait([
+      orders.where('buyerId', isEqualTo: uid).get(),
+      orders.where('sellerId', isEqualTo: uid).get(),
+    ]);
+    if ([...asBuyer.docs, ...asSeller.docs].any((d) => !done.contains(d.data()['status']))) {
+      throw const AccountDeletionBlocked(
+        'Finish or cancel your open orders before deleting your account.',
+      );
+    }
+    final listings = _db.collection('listings');
+    final live = await listings
+        .where('sellerId', isEqualTo: uid)
+        .where('status', isEqualTo: 'active')
+        .get();
+    if (live.docs.any((d) => ((d.data()['bidCount'] as num?) ?? 0) > 0)) {
+      throw const AccountDeletionBlocked(
+        'You have live auctions with bids. Wait until they end.',
+      );
+    }
+    for (final d in live.docs) {
+      await d.reference.update({
+        'status': 'ended',
+        'buyNowAvailable': false,
+        'endedAt': FieldValue.serverTimestamp(),
+      });
+    }
+
+    // Leave watchlists so watcher counts stay right (skip listings that are gone).
+    final watched = await listings.where('watcherIds', arrayContains: uid).get();
+    for (final d in watched.docs) {
+      try {
+        await d.reference.update({
+          'watcherCount': FieldValue.increment(-1),
+          'watcherIds': FieldValue.arrayRemove([uid]),
+        });
+      } catch (_) {}
+    }
+
+    final user = _user(uid);
+    for (final sub in ['notifications', 'addresses', 'drafts', 'watchlist', 'private']) {
+      while (true) {
+        final page = await user.collection(sub).limit(400).get();
+        if (page.docs.isEmpty) break;
+        final batch = _db.batch();
+        for (final d in page.docs) {
+          batch.delete(d.reference);
+        }
+        await batch.commit();
+      }
+    }
+    await user.delete();
+  }
+}
+
+/// Account can't be deleted yet (open orders, live auctions with bids).
+class AccountDeletionBlocked implements Exception {
+  const AccountDeletionBlocked(this.message);
+  final String message;
+  @override
+  String toString() => message;
 }

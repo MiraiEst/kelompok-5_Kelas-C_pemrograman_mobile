@@ -25,7 +25,7 @@ Tugas Pemrograman Mobile — Kelompok 5, Kelas C.
 | Bahasa | Inggris & Indonesia (ikut bahasa perangkat) — `lib/l10n/` |
 | REST API | [DummyJSON](https://dummyjson.com) untuk katalog, [Frankfurter](https://frankfurter.dev) untuk kurs |
 | State management | Riverpod 3 — `lib/providers/providers.dart` |
-| Backend | Cloud Functions — `functions/index.js` (push, penutupan lelang, order, Xendit, rating, hapus akun) |
+| Backend | Job terjadwal `cron/run.js` lewat GitHub Actions (tutup lelang, order, push, rating) — tanpa paket Blaze. Pembayaran Xendit tetap di `functions/` (butuh Blaze) |
 
 ## Struktur folder
 
@@ -38,7 +38,8 @@ lib/
   providers/     provider Riverpod
   ui/            layar per fitur + theme/ (warna & ukuran) + widgets/ (komponen bersama)
   router.dart    routing + guard login/verifikasi email/admin
-functions/       Cloud Functions (Node.js 22)
+cron/            job server tiap 5 menit via GitHub Actions (pengganti Cloud Functions)
+functions/       Cloud Functions (Node.js 22) — hanya perlu untuk pembayaran Xendit
 rules-test/      tes security rules dengan Firebase emulator
 firestore.rules  aturan keamanan Firestore
 supabase/        SQL bucket & kebijakan Supabase Storage (khusus file foto)
@@ -105,7 +106,29 @@ akun dihapus. Project Supabase gratis dijeda setelah 7 hari tidak aktif — akti
 User email/password harus membuka tautan verifikasi sebelum bisa menawar atau menjual
 (dicek di router dan di `firestore.rules` lewat `email_verified`). User Google sudah terverifikasi.
 
-### 4. Cloud Functions (paket Blaze)
+### 4. Job server tanpa Blaze (GitHub Actions)
+
+`cron/run.js` dijalankan GitHub Actions kira-kira tiap 5 menit
+(`.github/workflows/backend-cron.yml` di root repo). Isinya: menutup lelang yang habis waktunya,
+membuat order (lelang & Buy It Now), push notification, notifikasi dikirim/diterima, pengingat bayar,
+auto-complete pesanan, rating & `publicProfiles`.
+
+1. Firebase Console → Project settings → **Service accounts** → *Generate new private key*.
+2. GitHub repo → Settings → Secrets and variables → Actions → **New repository secret**
+   `FIREBASE_SERVICE_ACCOUNT` = isi file JSON tadi (jangan di-commit).
+3. Workflow terjadwal hanya jalan dari branch default (**main**) — merge dulu.
+   Untuk tes: tab Actions → *Backend cron* → **Run workflow**.
+
+Catatan: jadwal GitHub bisa terlambat 5–30 menit, jadi push dan penutupan lelang bisa telat
+(lelang juga langsung ditutup saat ada yang membuka halamannya). Pengingat "1 jam / 10 menit lagi"
+dijadwalkan langsung di HP (Android/iOS), jadi tetap tepat waktu. **Hapus akun** berjalan di aplikasi
+(minta password / login Google ulang). Kalau nanti pakai Blaze dan deploy Functions, matikan workflow
+ini agar notifikasi tidak dobel.
+
+Tes lokal dengan emulator:
+`FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 GCLOUD_PROJECT=demo-imagi node cron/run.js`
+
+### 4b. Cloud Functions (paket Blaze, hanya untuk pembayaran Xendit)
 
 ```bash
 cd functions && npm install && cd ..
@@ -114,8 +137,8 @@ firebase functions:secrets:set XENDIT_CALLBACK_TOKEN   # verification token dari
 firebase deploy --only functions
 ```
 
-Tanpa Cloud Functions aplikasi tetap jalan untuk lelang dasar (lelang ditutup saat ada yang membuka
-halamannya), tetapi order, pembayaran, rating, push, dan hapus akun butuh Functions.
+Tanpa Cloud Functions semua fitur jalan lewat job di atas, kecuali pembayaran Xendit
+(`createInvoice`, `xenditWebhook`).
 
 ### 5. Xendit (mode test)
 

@@ -77,12 +77,12 @@ final currentUserProvider = StreamProvider<AppUser?>((ref) {
   final user = ref.watch(authStateProvider).value;
   if (user == null) return Stream.value(null);
   // A signed-in account without a profile would wait forever: create it once.
-  var ensured = false;
+  // Only for the first snapshot, so a profile deleted by "Delete account"
+  // is not brought back.
+  var first = true;
   return ref.watch(userRepositoryProvider).watchUser(user.uid).asyncMap((profile) async {
-    if (profile == null && !ensured) {
-      ensured = true;
-      await ref.read(authRepositoryProvider).ensureProfile(user);
-    }
+    if (first && profile == null) await ref.read(authRepositoryProvider).ensureProfile(user);
+    first = false;
     return profile;
   });
 });
@@ -128,6 +128,24 @@ final myBidsProvider = StreamProvider<List<Listing>>((ref) {
   final uid = _uid(ref);
   if (uid == null) return Stream.value(const []);
   return ref.watch(listingRepositoryProvider).watchBidOn(uid);
+});
+
+/// Active listings I watch or bid on. The phone schedules local "ending soon"
+/// reminders for these (see NotificationService.scheduleEndingSoon).
+final reminderListingsProvider = StreamProvider<List<Listing>>((ref) {
+  final uid = _uid(ref);
+  if (uid == null) return Stream.value(const []);
+  return ref.watch(listingRepositoryProvider).watchWatchedBy(uid);
+});
+
+final endingSoonRemindersProvider = Provider<List<Listing>?>((ref) {
+  final bidOn = ref.watch(myBidsProvider).value;
+  final watched = ref.watch(reminderListingsProvider).value;
+  if (bidOn == null || watched == null) return null;
+  return {
+    for (final l in [...bidOn, ...watched])
+      if (l.status == ListingStatus.active) l.id: l,
+  }.values.toList();
 });
 
 /// Listings I won (by bidding or Buy It Now).
