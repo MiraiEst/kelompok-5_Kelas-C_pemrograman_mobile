@@ -7,12 +7,6 @@ abstract final class AppConfig {
   static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
   static const supabaseBucket = 'photos';
 
-  /// TODO(team): real Terms of Service page.
-  static const termsUrl = 'https://example.com/terms';
-
-  /// TODO(team): real Privacy Policy page.
-  static const privacyUrl = 'https://example.com/privacy';
-
   /// Final value fee charged to the seller, in percent of the sale price.
   /// TODO(team): confirm the fee.
   static const finalValueFeePercent = 5;

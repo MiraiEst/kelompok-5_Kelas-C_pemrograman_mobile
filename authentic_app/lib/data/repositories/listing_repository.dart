@@ -5,6 +5,7 @@ import '../../domain/bidding/proxy_engine.dart';
 import '../../domain/models/app_user.dart';
 import '../../domain/models/bid.dart';
 import '../../domain/models/listing.dart';
+import '../../l10n/l10n.dart';
 
 /// Thrown for business-rule failures the UI should show as-is.
 class AuctionException implements Exception {
@@ -288,10 +289,10 @@ class ListingRepository {
     return _db.runTransaction((tx) async {
       final listing = Listing.fromDoc(await tx.get(ref));
       if (buyer.uid == listing.sellerId) {
-        throw const AuctionException('You cannot buy your own item.');
+        throw AuctionException(currentL10n.cannotBuyOwn);
       }
       if (!listing.canBuyNow(DateTime.now())) {
-        throw const AuctionException('Buy It Now is no longer available.');
+        throw AuctionException(currentL10n.buyNowUnavailable);
       }
       final price = listing.buyNowPrice!;
       tx.update(ref, {
@@ -401,7 +402,7 @@ class ListingRepository {
   /// Seller can end early only when there are no bids. Admins can always.
   Future<void> endEarly(Listing listing, AppUser actor) async {
     if (!actor.isAdmin && listing.bidCount > 0) {
-      throw const AuctionException('Listings with bids cannot be ended early.');
+      throw AuctionException(currentL10n.cannotEndWithBids);
     }
     await _listings.doc(listing.id).update({
       'status': ListingStatus.ended.value,

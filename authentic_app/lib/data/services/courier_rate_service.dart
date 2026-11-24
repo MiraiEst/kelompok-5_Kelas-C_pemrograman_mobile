@@ -16,9 +16,9 @@ class FixedCourierRates implements CourierRateService {
     required int listingShippingCost,
     String? destinationCity,
   }) async => [
-    (id: 'jne_reg', name: 'JNE REG', eta: '2-3 days', price: listingShippingCost),
-    (id: 'sicepat_best', name: 'SiCepat BEST', eta: '1-2 days', price: listingShippingCost),
-    (id: 'jnt_ez', name: 'J&T EZ', eta: '2-4 days', price: listingShippingCost),
+    (id: 'jne_reg', name: 'JNE REG', eta: '2-3', price: listingShippingCost),
+    (id: 'sicepat_best', name: 'SiCepat BEST', eta: '1-2', price: listingShippingCost),
+    (id: 'jnt_ez', name: 'J&T EZ', eta: '2-4', price: listingShippingCost),
   ];
 }
 

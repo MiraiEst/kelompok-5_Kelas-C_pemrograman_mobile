@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import 'domain/models/app_notification.dart';
 import 'l10n/l10n.dart';
@@ -37,7 +38,11 @@ class _AuctionAppState extends ConsumerState<AuctionApp> {
       // English / Indonesian, following the device language.
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      builder: (context, child) => NotificationBridge(child: child ?? const SizedBox()),
+      builder: (context, child) {
+        // Lets plain Dart code (dates, "Ended" in countdowns) follow the app language.
+        Intl.defaultLocale = Localizations.localeOf(context).toLanguageTag();
+        return NotificationBridge(child: child ?? const SizedBox());
+      },
     );
   }
 }

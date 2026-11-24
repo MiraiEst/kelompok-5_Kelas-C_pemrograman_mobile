@@ -9,6 +9,8 @@ import '../../core/config.dart';
 import '../../core/extensions.dart';
 import '../../data/services/courier_rate_service.dart';
 import '../../domain/models/order.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../providers/providers.dart';
 import '../account/address_screens.dart';
 import '../theme/app_theme.dart';
@@ -18,7 +20,7 @@ import '../widgets/common.dart';
 import '../widgets/section_header.dart';
 import '../widgets/segmented_tabs.dart';
 
-final _dateTime = DateFormat('d MMM, HH:mm');
+DateFormat get _dateTime => DateFormat('d MMM, HH:mm');
 
 final feedbackExistsProvider = StreamProvider.autoDispose
     .family<bool, ({String orderId, bool asBuyer})>(
@@ -40,15 +42,17 @@ class OrderScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: o == null
-            ? const Text('Order')
+            ? Text(context.l10n.order)
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Order #${o.shortNumber}'),
+                  Text(context.l10n.orderNumber(o.shortNumber)),
                   Text(
                     isSeller
-                        ? 'Sold to ${(o.buyerName ?? 'buyer').masked()}'
-                        : 'Bought from ${(o.sellerName ?? 'seller').masked()}',
+                        ? context.l10n.soldTo((o.buyerName ?? context.l10n.buyerFallback).masked())
+                        : context.l10n.boughtFrom(
+                            (o.sellerName ?? context.l10n.sellerFallback).masked(),
+                          ),
                     style: AppText.caption,
                   ),
                 ],
@@ -56,9 +60,9 @@ class OrderScreen extends ConsumerWidget {
       ),
       body: switch (order) {
         AsyncValue(:final value?) => _OrderBody(order: value, isSeller: isSeller),
-        AsyncData() => const EmptyState(
+        AsyncData() => EmptyState(
           icon: Icons.receipt_long_outlined,
-          text: 'Order not found.',
+          text: context.l10n.orderNotFound,
         ),
         AsyncValue(:final error?) => ErrorText(
           error,
@@ -117,8 +121,8 @@ class _OrderBody extends ConsumerWidget {
                   const SizedBox(height: 2),
                   Text(
                     o.status.isPaid
-                        ? '${o.total.toRupiah()} paid'
-                        : '${o.total.toRupiah()} · ${o.status.label}',
+                        ? context.l10n.amountPaid(o.total.toRupiah())
+                        : '${o.total.toRupiah()} · ${o.status.text(context)}',
                     style: AppText.price,
                   ),
                 ],
@@ -135,9 +139,9 @@ class _OrderBody extends ConsumerWidget {
               border: Border.all(color: AppColors.ink, width: 2),
               borderRadius: BorderRadius.circular(AppRadius.input),
             ),
-            child: const Text(
-              'A problem was reported. Payment to the seller is on hold until it is resolved.',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            child: Text(
+              context.l10n.problemReportedBanner,
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -145,7 +149,7 @@ class _OrderBody extends ConsumerWidget {
         if (o.status == OrderStatus.awaitingPayment)
           _AwaitingPayment(order: o, isSeller: isSeller)
         else if (o.status == OrderStatus.cancelled)
-          const Text('This order was cancelled.', style: AppText.sectionTitle)
+          Text(context.l10n.orderCancelled, style: AppText.sectionTitle)
         else
           OrderStepper(order: o),
         const SizedBox(height: 16),
@@ -154,17 +158,19 @@ class _OrderBody extends ConsumerWidget {
         if (isSeller && o.status == OrderStatus.paid) _ShipForm(order: o),
         if (isSeller && o.status == OrderStatus.shipped)
           PrimaryButton(
-            label: 'Mark in transit',
-            onPressed: () => _run(context, () => repo.markInTransit(o.id), 'Marked in transit.'),
+            label: context.l10n.markInTransit,
+            onPressed: () =>
+                _run(context, () => repo.markInTransit(o.id), context.l10n.markedInTransit),
           ),
         if (isSeller && o.status == OrderStatus.inTransit)
           PrimaryButton(
-            label: 'Mark delivered',
-            onPressed: () => _run(context, () => repo.markDelivered(o.id), 'Marked delivered.'),
+            label: context.l10n.markDelivered,
+            onPressed: () =>
+                _run(context, () => repo.markDelivered(o.id), context.l10n.markedDelivered),
           ),
         if (isSeller && o.address != null) ...[
           const SizedBox(height: 16),
-          const SectionHeader('Ship to'),
+          SectionHeader(context.l10n.shipTo),
           const SizedBox(height: 8),
           AddressCard(address: o.address!),
         ],
@@ -172,30 +178,32 @@ class _OrderBody extends ConsumerWidget {
         // --- Buyer actions ------------------------------------------------------
         if (!isSeller && o.status.isPaid && o.status != OrderStatus.completed) ...[
           PrimaryButton(
-            label: 'I received the item',
+            label: context.l10n.iReceivedItem,
             onPressed: canConfirm
                 ? () async {
                     final ok = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('Confirm you received the item?'),
-                        content: const Text(
-                          'This completes the order and releases the payment to the seller.',
-                        ),
+                        title: Text(context.l10n.confirmReceivedQ),
+                        content: Text(context.l10n.confirmReceivedBody),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Not yet'),
+                            child: Text(context.l10n.notYet),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('Confirm'),
+                            child: Text(context.l10n.confirm),
                           ),
                         ],
                       ),
                     );
                     if (ok == true && context.mounted) {
-                      await _run(context, () => repo.confirmReceived(o.id), 'Order completed.');
+                      await _run(
+                        context,
+                        () => repo.confirmReceived(o.id),
+                        context.l10n.orderCompleted,
+                      );
                     }
                   }
                 : null,
@@ -203,7 +211,7 @@ class _OrderBody extends ConsumerWidget {
           const SizedBox(height: 10),
           if (!o.hasOpenCase)
             SecondaryButton(
-              label: 'Report a problem',
+              label: context.l10n.reportProblem,
               onPressed: () => showModalBottomSheet<void>(
                 context: context,
                 isScrollControlled: true,
@@ -212,10 +220,7 @@ class _OrderBody extends ConsumerWidget {
               ),
             ),
           const SizedBox(height: 8),
-          const Text(
-            "Not received or not as described? You're covered by buyer protection.",
-            style: AppText.caption,
-          ),
+          Text(context.l10n.buyerProtectionNote, style: AppText.caption),
         ],
         if (canRate) ...[const SizedBox(height: 24), _RateCard(order: o, asBuyer: !isSeller)],
       ],
@@ -232,18 +237,21 @@ class _AwaitingPayment extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const Text('Waiting for payment', style: AppText.sectionTitle),
+      Text(context.l10n.waitingForPayment, style: AppText.sectionTitle),
       const SizedBox(height: 4),
       CountdownText(
         endsAt: order.payBy,
-        prefix: isSeller ? 'Buyer has ' : 'Pay within ',
-        suffix: isSeller ? ' to pay' : '',
+        prefix: isSeller ? context.l10n.buyerHas : context.l10n.payWithin,
+        suffix: isSeller ? context.l10n.toPaySuffix : '',
         format: (d) => d.toShort(),
         style: AppText.meta,
       ),
       if (!isSeller) ...[
         const SizedBox(height: 16),
-        PrimaryButton(label: 'Pay now', onPressed: () => context.push('/checkout/${order.id}')),
+        PrimaryButton(
+          label: context.l10n.payNow,
+          onPressed: () => context.push('/checkout/${order.id}'),
+        ),
       ],
     ],
   );
@@ -258,15 +266,15 @@ class OrderStepper extends StatelessWidget {
   Widget build(BuildContext context) {
     final o = order;
     String when(DateTime? t) => t == null ? '' : _dateTime.format(t);
-    final payment = PaymentMethod.parse(o.paymentMethod)?.label;
+    final payment = PaymentMethod.parse(o.paymentMethod)?.text(context);
     final steps = [
       (
-        title: 'Paid',
+        title: context.l10n.statusPaid,
         detail: [when(o.paidAt), ?payment].where((s) => s.isNotEmpty).join(' · '),
         copy: false,
       ),
       (
-        title: 'Shipped',
+        title: context.l10n.statusShipped,
         detail: [
           when(o.shippedAt),
           if (o.courier != null && o.trackingNumber != null) '${o.courier} · ${o.trackingNumber}',
@@ -274,15 +282,15 @@ class OrderStepper extends StatelessWidget {
         copy: o.trackingNumber != null,
       ),
       (
-        title: 'In transit',
+        title: context.l10n.statusInTransit,
         detail: [when(o.inTransitAt), ?o.lastUpdate].where((s) => s.isNotEmpty).join(' · '),
         copy: false,
       ),
       (
-        title: 'Delivered',
+        title: context.l10n.statusDelivered,
         detail: [
           when(o.deliveredAt),
-          'Auto-confirmed ${AppConfig.autoConfirmDays} days after delivery',
+          context.l10n.autoConfirmed(AppConfig.autoConfirmDays),
         ].where((s) => s.isNotEmpty).join('\n'),
         copy: false,
       ),
@@ -310,7 +318,7 @@ class OrderStepper extends StatelessWidget {
             onCopy: steps[i].copy
                 ? () async {
                     await Clipboard.setData(ClipboardData(text: o.trackingNumber!));
-                    if (context.mounted) showSnack(context, 'Tracking number copied.');
+                    if (context.mounted) showSnack(context, context.l10n.trackingCopied);
                   }
                 : null,
           ),
@@ -366,7 +374,12 @@ class _Step extends StatelessWidget {
       ),
     };
     return Semantics(
-      label: '$title, ${state.name}${detail.isEmpty ? '' : '. $detail'}',
+      label:
+          '$title, ${switch (state) {
+            _StepState.done => context.l10n.stepDone,
+            _StepState.current => context.l10n.stepCurrent,
+            _StepState.upcoming => context.l10n.stepUpcoming,
+          }}${detail.isEmpty ? '' : '. $detail'}',
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,7 +418,7 @@ class _Step extends StatelessWidget {
                       TextButton(
                         style: TextButton.styleFrom(padding: EdgeInsets.zero),
                         onPressed: onCopy,
-                        child: const Text('Copy tracking number'),
+                        child: Text(context.l10n.copyTracking),
                       ),
                   ],
                 ),
@@ -446,7 +459,7 @@ class _ShipFormState extends ConsumerState<_ShipForm> {
       await ref
           .read(orderRepositoryProvider)
           .markShipped(widget.order.id, courier: _courier, trackingNumber: _tracking.text.trim());
-      if (mounted) showSnack(context, 'Marked as shipped. The buyer has been notified.');
+      if (mounted) showSnack(context, context.l10n.markedShipped);
     } catch (e) {
       if (mounted) showSnack(context, friendlyError(e));
     } finally {
@@ -467,14 +480,14 @@ class _ShipFormState extends ConsumerState<_ShipForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SectionHeader('Ship this order'),
+              SectionHeader(context.l10n.shipThisOrder),
               if (widget.order.handlingDays != null)
                 Text(
-                  'Ship within ${widget.order.handlingDays} days of payment.',
+                  context.l10n.shipWithinDays(widget.order.handlingDays!),
                   style: AppText.caption,
                 ),
               const SizedBox(height: 12),
-              const Text('Courier', style: AppText.fieldLabel),
+              Text(context.l10n.courier, style: AppText.fieldLabel),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
                 initialValue: _courier,
@@ -483,13 +496,13 @@ class _ShipFormState extends ConsumerState<_ShipForm> {
               ),
               const SizedBox(height: 12),
               AppTextField(
-                label: 'Tracking number',
+                label: context.l10n.trackingNumber,
                 controller: _tracking,
                 validator: (v) =>
-                    (v == null || v.trim().length < 6) ? 'Enter the tracking number' : null,
+                    (v == null || v.trim().length < 6) ? context.l10n.enterTracking : null,
               ),
               const SizedBox(height: 16),
-              PrimaryButton(label: 'Mark as shipped', loading: _busy, onPressed: _ship),
+              PrimaryButton(label: context.l10n.markAsShipped, loading: _busy, onPressed: _ship),
             ],
           ),
         );
@@ -505,7 +518,16 @@ enum _Reason {
   other('Other');
 
   const _Reason(this.label);
+
+  /// English, stored on the case document.
   final String label;
+
+  String text(BuildContext context) => switch (this) {
+    notReceived => context.l10n.reasonNotReceived,
+    notAsDescribed => context.l10n.reasonNotAsDescribed,
+    damaged => context.l10n.reasonDamaged,
+    other => context.l10n.reasonOther,
+  };
 }
 
 class _ReportSheet extends ConsumerStatefulWidget {
@@ -543,7 +565,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
     final uid = ref.read(authStateProvider).value?.uid;
     if (uid == null) return;
     if (_description.text.trim().length < 10) {
-      showSnack(context, 'Describe the problem in a few words (10+ characters).');
+      showSnack(context, context.l10n.describeProblem);
       return;
     }
     setState(() => _busy = true);
@@ -566,7 +588,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
       );
       if (!mounted) return;
       Navigator.of(context).pop();
-      showSnack(context, "Problem reported. We'll look into it.");
+      showSnack(context, context.l10n.problemReported);
     } catch (e) {
       if (mounted) showSnack(context, friendlyError(e));
     } finally {
@@ -583,7 +605,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Report a problem', style: AppText.title),
+          Text(context.l10n.reportProblem, style: AppText.title),
           const SizedBox(height: 12),
           RadioGroup<_Reason>(
             groupValue: _reason,
@@ -594,18 +616,18 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                   RadioListTile<_Reason>(
                     contentPadding: EdgeInsets.zero,
                     value: r,
-                    title: Text(r.label),
+                    title: Text(r.text(context)),
                   ),
               ],
             ),
           ),
           const SizedBox(height: 8),
           AppTextField(
-            label: 'What happened?',
+            label: context.l10n.whatHappened,
             controller: _description,
             maxLines: 4,
             minLines: 3,
-            hint: 'Tell us what is wrong with the item or delivery',
+            hint: context.l10n.whatHappenedHint,
           ),
           const SizedBox(height: 12),
           if (_photo != null)
@@ -618,18 +640,18 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                 const SizedBox(width: 8),
                 TextButton(
                   onPressed: () => setState(() => _photo = null),
-                  child: const Text('Remove photo'),
+                  child: Text(context.l10n.removePhoto),
                 ),
               ],
             )
           else
             SecondaryButton(
-              label: 'Add photo (optional)',
+              label: context.l10n.addPhotoOptional,
               icon: Icons.photo_outlined,
               onPressed: _pickPhoto,
             ),
           const SizedBox(height: 16),
-          PrimaryButton(label: 'Submit report', loading: _busy, onPressed: _submit),
+          PrimaryButton(label: context.l10n.submitReport, loading: _busy, onPressed: _submit),
         ],
       ),
     ),
@@ -644,6 +666,12 @@ enum _Rating {
   const _Rating(this.value, this.label);
   final String value;
   final String label;
+
+  String text(BuildContext context) => switch (this) {
+    positive => context.l10n.ratingPositive,
+    neutral => context.l10n.ratingNeutral,
+    negative => context.l10n.ratingNegative,
+  };
 }
 
 class _RateCard extends ConsumerStatefulWidget {
@@ -680,7 +708,7 @@ class _RateCardState extends ConsumerState<_RateCard> {
             rating: _rating.value,
             comment: _comment.text.trim(),
           );
-      if (mounted) showSnack(context, 'Thanks for your feedback!');
+      if (mounted) showSnack(context, context.l10n.thanksFeedback);
     } catch (e) {
       if (mounted) showSnack(context, friendlyError(e));
     } finally {
@@ -693,7 +721,7 @@ class _RateCardState extends ConsumerState<_RateCard> {
     final done = ref
         .watch(feedbackExistsProvider((orderId: widget.order.id, asBuyer: widget.asBuyer)))
         .value;
-    final title = widget.asBuyer ? 'Rate the seller' : 'Rate the buyer';
+    final title = widget.asBuyer ? context.l10n.rateSeller : context.l10n.rateBuyer;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -702,7 +730,7 @@ class _RateCardState extends ConsumerState<_RateCard> {
       ),
       child: done == true
           ? Text(
-              'You rated this ${widget.asBuyer ? 'seller' : 'buyer'}. Thanks!',
+              widget.asBuyer ? context.l10n.ratedSeller : context.l10n.ratedBuyer,
               style: AppText.meta,
             )
           : Column(
@@ -713,12 +741,12 @@ class _RateCardState extends ConsumerState<_RateCard> {
                 SegmentedTabs<_Rating>(
                   values: _Rating.values,
                   selected: _rating,
-                  label: (r) => r.label,
+                  label: (r) => r.text(context),
                   onChanged: (r) => setState(() => _rating = r),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
-                  label: 'Comment',
+                  label: context.l10n.comment,
                   controller: _comment,
                   maxLines: 3,
                   minLines: 2,
@@ -726,7 +754,7 @@ class _RateCardState extends ConsumerState<_RateCard> {
                 ),
                 const SizedBox(height: 12),
                 PrimaryButton(
-                  label: 'Send rating',
+                  label: context.l10n.sendRating,
                   loading: _busy,
                   onPressed: done == null ? null : _send,
                 ),

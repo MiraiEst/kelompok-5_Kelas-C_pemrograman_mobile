@@ -134,7 +134,7 @@ class _CountdownTextState extends State<CountdownText> {
   @override
   Widget build(BuildContext context) {
     final left = widget.endsAt.difference(DateTime.now());
-    if (left <= Duration.zero) return Text('Ended', style: widget.style);
+    if (left <= Duration.zero) return Text(context.l10n.endedLabel, style: widget.style);
     final urgent = left < const Duration(minutes: 10);
     final text = (widget.format ?? (d) => d.toClock())(left);
     return Text(
@@ -202,10 +202,8 @@ class ErrorText extends StatelessWidget {
 /// Short, human message for an exception.
 String friendlyError(Object e) {
   final s = e.toString();
-  if (s.contains('permission-denied')) return "You don't have permission to do that.";
-  if (s.contains('unavailable') || s.contains('network')) {
-    return 'No connection. Check your internet and try again.';
-  }
+  if (s.contains('permission-denied')) return currentL10n.noPermission;
+  if (s.contains('unavailable') || s.contains('network')) return currentL10n.noConnection;
   return s.replaceFirst(RegExp(r'^\[[^\]]+\]\s*'), '');
 }
 

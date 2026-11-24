@@ -224,7 +224,7 @@ class NotificationTile extends StatelessWidget {
     final when = relativeTime(n.createdAt, now, context.l10n);
     return Semantics(
       button: true,
-      label: '${unread ? 'Unread. ' : ''}${n.title}. ${n.body}. $when',
+      label: '${unread ? context.l10n.unreadPrefix : ''}${n.title}. ${n.body}. $when',
       excludeSemantics: true,
       child: Material(
         color: unread ? AppColors.surface : AppColors.background,

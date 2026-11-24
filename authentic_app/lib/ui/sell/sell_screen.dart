@@ -8,6 +8,8 @@ import '../../core/config.dart';
 import '../../core/result.dart';
 import '../../domain/models/catalog_product.dart';
 import '../../domain/models/listing.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../providers/providers.dart';
 import '../listing/listing_detail_screen.dart' show endDateFormat;
 import '../theme/app_theme.dart';
@@ -62,7 +64,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
   late String _listingId = ref.read(listingRepositoryProvider).newListingId();
   final List<SellPhoto> _photos = [];
   final Map<SellPhoto, double> _progress = {};
-  String? _photoError;
+  SellError? _photoError;
   String? _category;
   ItemCondition _condition = ItemCondition.used;
   ListingFormat _format = ListingFormat.auction;
@@ -119,11 +121,17 @@ class _SellScreenState extends ConsumerState<SellScreen> {
     final resume = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Continue your draft?'),
-        content: Text('"${data['title'] ?? 'Untitled'}" was saved as a draft.'),
+        title: Text(context.l10n.continueDraftQ),
+        content: Text(context.l10n.draftSavedAs('${data['title'] ?? context.l10n.untitled}')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Start new')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Continue')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.l10n.startNew),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.l10n.continueLabel),
+          ),
         ],
       ),
     );
@@ -186,9 +194,9 @@ class _SellScreenState extends ConsumerState<SellScreen> {
       });
       if (!mounted) return;
       setState(() => _dirty = false);
-      showSnack(context, 'Draft saved.');
+      showSnack(context, context.l10n.draftSaved);
     } catch (e) {
-      if (mounted) showSnack(context, 'Could not save draft: ${friendlyError(e)}');
+      if (mounted) showSnack(context, context.l10n.couldNotSaveDraft(friendlyError(e)));
     } finally {
       if (mounted) setState(() => _savingDraft = false);
     }
@@ -205,12 +213,12 @@ class _SellScreenState extends ConsumerState<SellScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take a photo'),
+              title: Text(context.l10n.takePhoto),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
+              title: Text(context.l10n.chooseFromGallery),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
           ],
@@ -243,7 +251,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
       _dirty = true;
       if (_submitted) _photoError = SellValidation.photos(_photos.length);
     });
-    if (files.length > room) showSnack(context, 'Only ${AppConfig.maxPhotos} photos allowed.');
+    if (files.length > room) showSnack(context, context.l10n.onlyNPhotos(AppConfig.maxPhotos));
   }
 
   void _removePhoto(SellPhoto p) => setState(() {
@@ -320,7 +328,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
         final rounded = (idr / 1000).round() * 1000;
         _start.text = formatThousands(rounded < 1000 ? 1000 : rounded);
       case Err():
-        showSnack(context, 'Exchange rate unavailable. Enter the starting price yourself.');
+        showSnack(context, context.l10n.rateUnavailable);
     }
   }
 
@@ -391,7 +399,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
       _dirty = false;
       if (mounted) context.pushReplacement('/listing/$id');
     } catch (e) {
-      if (mounted) showSnack(context, 'Could not create listing: ${friendlyError(e)}');
+      if (mounted) showSnack(context, context.l10n.couldNotCreateListing(friendlyError(e)));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -402,11 +410,14 @@ class _SellScreenState extends ConsumerState<SellScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Discard this listing?'),
-        content: const Text('Your changes will be lost. Tap "Save draft" to keep them.'),
+        title: Text(context.l10n.discardQ),
+        content: Text(context.l10n.discardBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep editing')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Discard')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.l10n.keepEditing),
+          ),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.l10n.discard)),
         ],
       ),
     );
@@ -444,8 +455,12 @@ class _SellScreenState extends ConsumerState<SellScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: IconButton(tooltip: 'Close', icon: const Icon(Icons.close), onPressed: _close),
-          title: const Text('Sell an item'),
+          leading: IconButton(
+            tooltip: context.l10n.close,
+            icon: const Icon(Icons.close),
+            onPressed: _close,
+          ),
+          title: Text(context.l10n.sellAnItem),
           actions: [
             TextButton(
               onPressed: _savingDraft || _busy ? null : _saveDraft,
@@ -455,7 +470,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Save draft'),
+                  : Text(context.l10n.saveDraft),
             ),
             const SizedBox(width: 4),
           ],
@@ -470,7 +485,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             children: [
               SecondaryButton(
-                label: 'Import from catalog',
+                label: context.l10n.importFromCatalog,
                 icon: Icons.travel_explore,
                 dashed: true,
                 onPressed: _importFromCatalog,
@@ -480,7 +495,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
                 key: _photosKey,
                 photos: _photos,
                 progress: _progress,
-                error: _photoError,
+                error: _photoError?.text(context),
                 onAdd: _photos.length >= AppConfig.maxPhotos || _busy ? null : _addPhotos,
                 onRemove: _busy ? null : _removePhoto,
                 onMove: _movePhoto,
@@ -488,17 +503,17 @@ class _SellScreenState extends ConsumerState<SellScreen> {
               const SizedBox(height: 24),
               AppTextField(
                 key: _titleKey,
-                label: 'Title',
+                label: context.l10n.title,
                 controller: _title,
-                hint: 'Brand, model, size, colour',
+                hint: context.l10n.titleHint,
                 maxLength: 80,
-                validator: (v) => SellValidation.title(v ?? ''),
+                validator: (v) => SellValidation.title(v ?? '')?.text(context),
               ),
               const SizedBox(height: 16),
               AppTextField(
-                label: 'Description',
+                label: context.l10n.description,
                 controller: _description,
-                hint: "Condition, what's included, any flaws",
+                hint: context.l10n.descriptionHint,
                 maxLines: 3,
                 minLines: 3,
               ),
@@ -507,13 +522,13 @@ class _SellScreenState extends ConsumerState<SellScreen> {
                 key: _categoryKey,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Category', style: AppText.fieldLabel),
+                  Text(context.l10n.category, style: AppText.fieldLabel),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     key: ValueKey(_category),
                     initialValue: _category,
                     isExpanded: true,
-                    hint: const Text('Choose a category'),
+                    hint: Text(context.l10n.chooseCategory),
                     items: [
                       for (final e in categoryItems.entries)
                         DropdownMenuItem(value: e.key, child: Text(e.value)),
@@ -522,29 +537,29 @@ class _SellScreenState extends ConsumerState<SellScreen> {
                       _category = v;
                       _dirty = true;
                     }),
-                    validator: SellValidation.category,
+                    validator: (v) => SellValidation.category(v)?.text(context),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              const Text('Condition', style: AppText.fieldLabel),
+              Text(context.l10n.condition, style: AppText.fieldLabel),
               const SizedBox(height: 6),
               SegmentedTabs<ItemCondition>(
                 values: ItemCondition.values,
                 selected: _condition,
-                label: (c) => c.label,
+                label: (c) => c.text(context),
                 onChanged: (c) => setState(() {
                   _condition = c;
                   _dirty = true;
                 }),
               ),
               const SizedBox(height: 16),
-              const Text('Format', style: AppText.fieldLabel),
+              Text(context.l10n.format, style: AppText.fieldLabel),
               const SizedBox(height: 6),
               SegmentedTabs<ListingFormat>(
                 values: ListingFormat.values,
                 selected: _format,
-                label: (f) => f.label,
+                label: (f) => f.text(context),
                 onChanged: (f) => setState(() {
                   _format = f;
                   _dirty = true;
@@ -552,10 +567,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
               ),
               if (_format == ListingFormat.buyNow) ...[
                 const SizedBox(height: 6),
-                const Text(
-                  'Fixed price, no bids. The first buyer gets it.',
-                  style: AppText.caption,
-                ),
+                Text(context.l10n.buyNowOnlyNote, style: AppText.caption),
               ],
               const SizedBox(height: 16),
               Row(
@@ -565,21 +577,25 @@ class _SellScreenState extends ConsumerState<SellScreen> {
                   if (_format.hasAuction)
                     Expanded(
                       child: AppTextField(
-                        label: 'Starting price',
+                        label: context.l10n.startingPrice,
                         controller: _start,
                         rupiah: true,
-                        validator: (_) => SellValidation.startPrice(_format, start),
+                        validator: (_) => SellValidation.startPrice(_format, start)?.text(context),
                       ),
                     ),
                   if (_format == ListingFormat.both) const SizedBox(width: 12),
                   if (_format.hasBuyNow)
                     Expanded(
                       child: AppTextField(
-                        label: 'Buy It Now',
+                        label: context.l10n.buyItNow,
                         controller: _buyNow,
                         rupiah: true,
-                        validator: (_) =>
-                            SellValidation.buyNowPrice(_format, start, reserve, buyNow),
+                        validator: (_) => SellValidation.buyNowPrice(
+                          _format,
+                          start,
+                          reserve,
+                          buyNow,
+                        )?.text(context),
                       ),
                     ),
                 ],
@@ -588,16 +604,17 @@ class _SellScreenState extends ConsumerState<SellScreen> {
                 const SizedBox(height: 16),
                 AppTextField(
                   key: _reserveKey,
-                  label: 'Reserve price',
-                  labelSuffix: '(optional, hidden)',
+                  label: context.l10n.reservePrice,
+                  labelSuffix: context.l10n.optionalHidden,
                   controller: _reserve,
                   rupiah: true,
-                  helper: "The item won't sell below this price",
-                  validator: (_) => SellValidation.reservePrice(_format, start, reserve),
+                  helper: context.l10n.reserveHelper,
+                  validator: (_) =>
+                      SellValidation.reservePrice(_format, start, reserve)?.text(context),
                 ),
               ],
               const SizedBox(height: 16),
-              const Text('Duration', style: AppText.fieldLabel),
+              Text(context.l10n.duration, style: AppText.fieldLabel),
               const SizedBox(height: 6),
               Wrap(
                 spacing: 8,
@@ -605,7 +622,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
                 children: [
                   for (final d in durations)
                     ChoiceChip(
-                      label: Text(d.label),
+                      label: Text(d.text(context)),
                       selected: d == _duration,
                       materialTapTargetSize: MaterialTapTargetSize.padded,
                       onSelected: (_) => setState(() {
@@ -617,21 +634,21 @@ class _SellScreenState extends ConsumerState<SellScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Ends ${endDateFormat.format(DateTime.now().add(_duration.duration))}',
+                context.l10n.endsOn(endDateFormat.format(DateTime.now().add(_duration.duration))),
                 style: AppText.caption,
               ),
               const SizedBox(height: 28),
-              const SectionHeader('Shipping & returns'),
+              SectionHeader(context.l10n.shippingAndReturns),
               const SizedBox(height: 12),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: AppTextField(
-                      label: 'Shipping cost',
+                      label: context.l10n.shippingCost,
                       controller: _shipping,
                       rupiah: true,
-                      hint: '0 = free',
+                      hint: context.l10n.zeroFree,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -639,14 +656,14 @@ class _SellScreenState extends ConsumerState<SellScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Ships within', style: AppText.fieldLabel),
+                        Text(context.l10n.shipsWithin, style: AppText.fieldLabel),
                         const SizedBox(height: 6),
                         DropdownButtonFormField<int>(
                           initialValue: _handlingDays,
                           isExpanded: true,
                           items: [
                             for (final d in const [1, 2, 3, 5])
-                              DropdownMenuItem(value: d, child: Text(d == 1 ? '1 day' : '$d days')),
+                              DropdownMenuItem(value: d, child: Text(context.l10n.nDays(d))),
                           ],
                           onChanged: (v) => setState(() {
                             _handlingDays = v ?? _handlingDays;
@@ -660,16 +677,19 @@ class _SellScreenState extends ConsumerState<SellScreen> {
               ),
               const SizedBox(height: 16),
               AppTextField(
-                label: 'Item location',
+                label: context.l10n.itemLocation,
                 controller: _location,
-                hint: 'City, e.g. Makassar',
+                hint: context.l10n.itemLocationHint,
                 textInputAction: TextInputAction.done,
               ),
               const SizedBox(height: 8),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Accept returns', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('Within 7 days', style: AppText.caption),
+                title: Text(
+                  context.l10n.acceptReturns,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(context.l10n.within7Days, style: AppText.caption),
                 value: _acceptsReturns,
                 onChanged: (v) => setState(() {
                   _acceptsReturns = v;
@@ -691,10 +711,10 @@ class _SellScreenState extends ConsumerState<SellScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  PrimaryButton(label: 'List item', loading: _busy, onPressed: _submit),
+                  PrimaryButton(label: context.l10n.listItem, loading: _busy, onPressed: _submit),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Final value fee: ${AppConfig.finalValueFeePercent}% of the sale price',
+                  Text(
+                    context.l10n.finalValueFee(AppConfig.finalValueFeePercent),
                     style: AppText.caption,
                   ),
                 ],
@@ -734,12 +754,12 @@ class _PhotoGrid extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Expanded(child: Text('Photos', style: AppText.sectionTitle)),
+            Expanded(child: Text(context.l10n.photos, style: AppText.sectionTitle)),
             Text('${photos.length} / ${AppConfig.maxPhotos}', style: AppText.meta),
           ],
         ),
         const SizedBox(height: 4),
-        const Text('Long-press to reorder. The first photo is the cover.', style: AppText.caption),
+        Text(context.l10n.reorderHint, style: AppText.caption),
         const SizedBox(height: 10),
         GridView.count(
           crossAxisCount: 4,
@@ -750,7 +770,7 @@ class _PhotoGrid extends StatelessWidget {
           children: [
             Semantics(
               button: true,
-              label: 'Add photos',
+              label: context.l10n.addPhotos,
               child: InkWell(
                 onTap: onAdd,
                 borderRadius: BorderRadius.circular(AppRadius.photo),
@@ -837,9 +857,13 @@ class _PhotoTile extends StatelessWidget {
                 color: AppColors.ink,
                 borderRadius: BorderRadius.circular(AppRadius.pill),
               ),
-              child: const Text(
-                'Cover',
-                style: TextStyle(color: AppColors.onInk, fontSize: 10, fontWeight: FontWeight.w700),
+              child: Text(
+                context.l10n.cover,
+                style: const TextStyle(
+                  color: AppColors.onInk,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -856,7 +880,7 @@ class _PhotoTile extends StatelessWidget {
                     value: progress == 0 ? null : progress,
                     strokeWidth: 3,
                     color: AppColors.onInk,
-                    semanticsLabel: 'Uploading photo ${index + 1}',
+                    semanticsLabel: context.l10n.uploadingPhoto(index + 1),
                   ),
                 ),
               ),
@@ -867,7 +891,7 @@ class _PhotoTile extends StatelessWidget {
             top: -6,
             right: -6,
             child: IconButton(
-              tooltip: 'Remove photo ${index + 1}',
+              tooltip: context.l10n.removePhotoN(index + 1),
               onPressed: () => onRemove!(photo),
               icon: Container(
                 padding: const EdgeInsets.all(2),
@@ -887,7 +911,7 @@ class _PhotoTile extends StatelessWidget {
         feedback: SizedBox(width: 72, height: 72, child: Opacity(opacity: 0.85, child: _image())),
         childWhenDragging: Opacity(opacity: 0.3, child: tile),
         child: Semantics(
-          label: index == 0 ? 'Photo 1, cover' : 'Photo ${index + 1}',
+          label: index == 0 ? context.l10n.photo1Cover : context.l10n.photoN(index + 1),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
             decoration: BoxDecoration(

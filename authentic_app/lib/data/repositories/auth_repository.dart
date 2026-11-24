@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../../l10n/l10n.dart';
 
 /// Authentication (Firebase Auth: email + password, and Google).
 /// Every new account gets a `users/{uid}` profile with role "user".
@@ -98,7 +99,7 @@ class AuthRepository {
   /// (e.g. 'wrong-password' / 'invalid-credential') if it fails.
   Future<void> reauthenticate({String? password}) async {
     final user = _auth.currentUser;
-    if (user == null) throw StateError('Not signed in.');
+    if (user == null) throw StateError(currentL10n.notSignedIn);
     if (usesPassword) {
       await user.reauthenticateWithCredential(
         EmailAuthProvider.credential(email: user.email ?? '', password: password ?? ''),
@@ -159,19 +160,21 @@ bool needsEmailVerification(User user) =>
     !user.emailVerified && !user.providerData.any((p) => p.providerId == 'google.com');
 
 /// Friendly messages for Firebase Auth error codes.
-String authErrorMessage(Object e) => switch (e) {
-  FirebaseAuthException(code: 'invalid-email') => 'That email address is not valid.',
-  FirebaseAuthException(code: 'user-disabled') => 'This account has been disabled.',
-  FirebaseAuthException(code: 'email-already-in-use') =>
-    'An account already exists for that email.',
-  FirebaseAuthException(code: 'weak-password') => 'Use at least 8 characters for the password.',
-  FirebaseAuthException(code: 'invalid-credential' || 'wrong-password' || 'user-not-found') =>
-    'Wrong email or password.',
-  FirebaseAuthException(code: 'too-many-requests') => 'Too many attempts. Try again later.',
-  FirebaseAuthException(code: 'popup-closed-by-user' || 'cancelled-popup-request') =>
-    'Google sign-in was cancelled.',
-  GoogleSignInException(code: GoogleSignInExceptionCode.canceled) =>
-    'Google sign-in was cancelled.',
-  FirebaseAuthException(:final message) => message ?? 'Authentication failed.',
-  _ => 'Something went wrong: $e',
-};
+String authErrorMessage(Object e) {
+  final l = currentL10n;
+  return switch (e) {
+    FirebaseAuthException(code: 'invalid-email') => l.authInvalidEmail,
+    FirebaseAuthException(code: 'user-disabled') => l.authDisabled,
+    FirebaseAuthException(code: 'email-already-in-use') => l.authEmailInUse,
+    FirebaseAuthException(code: 'weak-password') => l.authWeakPassword,
+    FirebaseAuthException(code: 'invalid-credential' || 'wrong-password' || 'user-not-found') =>
+      l.authWrongCredentials,
+    FirebaseAuthException(code: 'too-many-requests') => l.authTooMany,
+    FirebaseAuthException(code: 'network-request-failed') => l.noConnection,
+    FirebaseAuthException(code: 'popup-closed-by-user' || 'cancelled-popup-request') =>
+      l.authGoogleCancelled,
+    GoogleSignInException(code: GoogleSignInExceptionCode.canceled) => l.authGoogleCancelled,
+    FirebaseAuthException(:final message) => message ?? l.authFailed,
+    _ => l.somethingWrong('$e'),
+  };
+}

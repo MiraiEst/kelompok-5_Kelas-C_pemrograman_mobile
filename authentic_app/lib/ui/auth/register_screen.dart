@@ -3,11 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/l10n.dart';
 
-import '../../core/config.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../providers/providers.dart';
 import '../theme/app_theme.dart';
@@ -41,8 +39,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    _termsTap.onTap = () => _open(AppConfig.termsUrl);
-    _privacyTap.onTap = () => _open(AppConfig.privacyUrl);
+    _termsTap.onTap = () => context.push('/legal/terms');
+    _privacyTap.onTap = () => context.push('/legal/privacy');
   }
 
   @override
@@ -53,11 +51,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _termsTap.dispose();
     _privacyTap.dispose();
     super.dispose();
-  }
-
-  Future<void> _open(String url) async {
-    final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.inAppBrowserView);
-    if (!ok && mounted) showSnack(context, 'Could not open the page.');
   }
 
   Future<void> _submit() async {

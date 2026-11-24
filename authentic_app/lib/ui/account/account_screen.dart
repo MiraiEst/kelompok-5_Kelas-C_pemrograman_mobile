@@ -36,7 +36,7 @@ class AccountScreen extends ConsumerWidget {
     try {
       await auth.signOut();
     } catch (e) {
-      if (context.mounted) showSnack(context, 'Could not sign out: $e');
+      if (context.mounted) showSnack(context, context.l10n.couldNotSignOut('$e'));
       return;
     }
     // The router also redirects on the auth change; go there directly too.
@@ -47,35 +47,41 @@ class AccountScreen extends ConsumerWidget {
     final first = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete your account?'),
-        content: const Text(
-          'Your profile, addresses, payout account, drafts and watchlist will be deleted. '
-          'Finished orders are kept for the other party. This cannot be undone.',
-        ),
+        title: Text(context.l10n.deleteAccountQ),
+        content: Text(context.l10n.deleteAccountBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Continue')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.l10n.continueLabel),
+          ),
         ],
       ),
     );
     if (first != true || !context.mounted) return;
     final confirm = TextEditingController();
+    final word = context.l10n.deleteWord;
     final second = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: const Text('Type DELETE to confirm'),
+          title: Text(context.l10n.typeToConfirm(word)),
           content: TextField(
             controller: confirm,
             autofocus: true,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(hintText: 'DELETE'),
+            decoration: InputDecoration(hintText: word),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
             TextButton(
-              onPressed: confirm.text.trim() == 'DELETE' ? () => Navigator.pop(ctx, true) : null,
-              child: const Text('Delete account'),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(context.l10n.cancel),
+            ),
+            TextButton(
+              onPressed: confirm.text.trim().toUpperCase() == word
+                  ? () => Navigator.pop(ctx, true)
+                  : null,
+              child: Text(context.l10n.deleteAccount),
             ),
           ],
         ),
@@ -97,15 +103,16 @@ class AccountScreen extends ConsumerWidget {
       await auth.reauthenticate(password: password);
       await ref.read(userRepositoryProvider).deleteMyData(uid);
       await auth.deleteLogin();
-      if (context.mounted) showSnack(context, 'Your account was deleted.');
+      if (context.mounted) showSnack(context, context.l10n.accountDeleted);
     } on AccountDeletionBlocked catch (e) {
       if (context.mounted) showSnack(context, e.message);
     } on FirebaseAuthException catch (e) {
       if (context.mounted) {
         showSnack(context, switch (e.code) {
-          'wrong-password' || 'invalid-credential' => 'Wrong password. Nothing was deleted.',
-          'popup-closed-by-user' || 'cancelled-popup-request' => 'Cancelled. Nothing was deleted.',
-          _ => e.message ?? 'Could not delete the account.',
+          'wrong-password' || 'invalid-credential' => context.l10n.wrongPasswordNothingDeleted,
+          'popup-closed-by-user' ||
+          'cancelled-popup-request' => context.l10n.cancelledNothingDeleted,
+          _ => e.message ?? context.l10n.couldNotDeleteAccount,
         });
       }
     } catch (e) {
@@ -118,19 +125,19 @@ class AccountScreen extends ConsumerWidget {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Enter your password'),
+        title: Text(context.l10n.enterYourPassword),
         content: TextField(
           controller: controller,
           autofocus: true,
           obscureText: true,
-          decoration: const InputDecoration(hintText: 'Password'),
+          decoration: InputDecoration(hintText: context.l10n.password),
           onSubmitted: (v) => Navigator.pop(ctx, v),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.l10n.cancel)),
           TextButton(
             onPressed: () => Navigator.pop(ctx, controller.text),
-            child: const Text('Delete account'),
+            child: Text(context.l10n.deleteAccount),
           ),
         ],
       ),

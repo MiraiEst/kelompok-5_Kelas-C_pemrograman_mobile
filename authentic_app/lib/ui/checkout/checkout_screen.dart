@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/extensions.dart';
 import '../../data/services/courier_rate_service.dart';
 import '../../domain/models/order.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../providers/providers.dart';
 import '../account/address_screens.dart';
 import '../theme/app_theme.dart';
@@ -58,7 +60,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final address = _address;
     if (address == null) return;
     if (DateTime.now().isAfter(o.payBy)) {
-      showSnack(context, 'The payment window for this order has expired.');
+      showSnack(context, context.l10n.paymentExpired);
       return;
     }
     setState(() => _paying = true);
@@ -72,15 +74,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       );
       final url = await repo.createInvoice(o.id);
       final opened = await launchUrl(Uri.parse(url), mode: LaunchMode.inAppBrowserView);
-      if (!opened && mounted) showSnack(context, 'Could not open the payment page.');
+      if (!opened && mounted) showSnack(context, context.l10n.couldNotOpenPayment);
       // The order stream flips to "paid" when Xendit calls our webhook.
     } on FirebaseFunctionsException catch (e) {
       if (!mounted) return;
       showSnack(context, switch (e.code) {
-        'unavailable' || 'deadline-exceeded' => 'No connection. Check your internet and try again.',
-        'failed-precondition' => e.message ?? 'This order can no longer be paid.',
-        'not-found' => 'Payments are not set up yet (Cloud Functions not deployed).',
-        _ => e.message ?? 'Payment failed. Please try again.',
+        'unavailable' || 'deadline-exceeded' => context.l10n.noConnection,
+        'failed-precondition' => e.message ?? context.l10n.orderCantBePaid,
+        'not-found' => context.l10n.paymentsNotSetUp,
+        _ => e.message ?? context.l10n.paymentFailed,
       });
     } catch (e) {
       if (mounted) showSnack(context, friendlyError(e));
@@ -106,7 +108,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Checkout')),
+      appBar: AppBar(title: Text(context.l10n.checkout)),
       body: switch (order) {
         AsyncValue(:final value?) when value.status.isPaid => _AlreadyPaid(orderId: value.id),
         AsyncValue(:final value?) => Builder(
@@ -115,9 +117,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             return _body(value);
           },
         ),
-        AsyncData() => const EmptyState(
+        AsyncData() => EmptyState(
           icon: Icons.receipt_long_outlined,
-          text: 'Your order is being prepared. Check back in a moment.',
+          text: context.l10n.orderPreparing,
         ),
         AsyncValue(:final error?) => ErrorText(
           error,
@@ -177,10 +179,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       style: AppText.small,
                     ),
                     const SizedBox(height: 2),
-                    Text('Won for ${o.itemPrice.toRupiah()}', style: AppText.price),
+                    Text(context.l10n.wonFor(o.itemPrice.toRupiah()), style: AppText.price),
                     CountdownText(
                       endsAt: o.payBy,
-                      prefix: 'Pay within ',
+                      prefix: context.l10n.payWithin,
                       format: (d) => d.toShort(),
                       style: AppText.caption,
                     ),
@@ -192,47 +194,44 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         ),
         const SizedBox(height: 24),
         SectionHeader(
-          'Shipping address',
+          context.l10n.shippingAddress,
           onSeeAll: _changeAddress,
-          actionLabel: _address == null ? 'Add' : 'Change',
+          actionLabel: _address == null ? context.l10n.add : context.l10n.change,
         ),
         const SizedBox(height: 8),
         if (_address != null)
           AddressCard(address: _address!)
         else
           SecondaryButton(
-            label: 'Add shipping address',
+            label: context.l10n.addShippingAddress,
             icon: Icons.add,
             onPressed: _changeAddress,
           ),
         const SizedBox(height: 24),
-        const SectionHeader('Courier'),
+        SectionHeader(context.l10n.courier),
         const SizedBox(height: 8),
         for (final r in rates)
           _RadioCard(
             selected: r.name == courier?.name,
             title: r.name,
-            subtitle: r.eta,
-            trailing: r.price == 0 ? 'Free' : r.price.toRupiah(),
+            subtitle: context.l10n.etaDays(r.eta),
+            trailing: r.price == 0 ? context.l10n.free : r.price.toRupiah(),
             onTap: () => setState(() => _courier = r.name),
           ),
         const SizedBox(height: 16),
-        const SectionHeader('Payment method'),
+        SectionHeader(context.l10n.paymentMethod),
         const SizedBox(height: 8),
         for (final m in PaymentMethod.values)
           _RadioCard(
             selected: m == _method,
-            title: m.label,
-            subtitle: m.detail,
+            title: m.text(context),
+            subtitle: m.detailText(context),
             onTap: () => setState(() => _method = m),
           ),
         const SizedBox(height: 16),
         PriceSummary(prices: prices),
         const SizedBox(height: 12),
-        const Text(
-          'Your money is held by Imagi Auction and only released to the seller after you confirm delivery.',
-          style: AppText.caption,
-        ),
+        Text(context.l10n.heldNote, style: AppText.caption),
       ],
     );
   }
@@ -260,11 +259,11 @@ class PriceSummary extends StatelessWidget {
     );
     return Column(
       children: [
-        row('Winning price', prices.item),
-        row('Shipping', prices.shipping),
-        row('Service fee', prices.fee),
+        row(context.l10n.winningPrice, prices.item),
+        row(context.l10n.shipping, prices.shipping),
+        row(context.l10n.serviceFee, prices.fee),
         const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider()),
-        row('Total', prices.total, total: true),
+        row(context.l10n.total, prices.total, total: true),
       ],
     );
   }
@@ -350,7 +349,7 @@ class _PayBar extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: PrimaryButton(
-          label: 'Pay with Xendit',
+          label: context.l10n.payWithXendit,
           loading: loading,
           onPressed: enabled ? onPay : null,
         ),
@@ -366,9 +365,9 @@ class _AlreadyPaid extends StatelessWidget {
   @override
   Widget build(BuildContext context) => EmptyState(
     icon: Icons.check_circle_outline,
-    text: 'This order is paid.',
+    text: context.l10n.orderIsPaid,
     action: PrimaryButton(
-      label: 'Track order',
+      label: context.l10n.trackOrder,
       expand: false,
       onPressed: () => context.pushReplacement('/orders/$orderId'),
     ),
@@ -392,21 +391,21 @@ class _PaymentSuccess extends StatelessWidget {
             const SizedBox(height: 16),
             Semantics(
               liveRegion: true,
-              child: const Text(
-                'Payment received',
+              child: Text(
+                context.l10n.paymentReceived,
                 textAlign: TextAlign.center,
                 style: AppText.heading,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              "We've told the seller. You'll get a notification when it ships.",
+            Text(
+              context.l10n.paymentReceivedBody,
               textAlign: TextAlign.center,
               style: AppText.meta,
             ),
             const SizedBox(height: 32),
             PrimaryButton(
-              label: 'Track order',
+              label: context.l10n.trackOrder,
               onPressed: () {
                 Navigator.of(context).pop();
                 context.pushReplacement('/orders/$orderId');

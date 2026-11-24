@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/extensions.dart';
 import '../../domain/bidding/increments.dart';
 import '../../domain/bidding/proxy_engine.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../domain/models/listing.dart';
 import '../../providers/providers.dart';
 import '../theme/app_theme.dart';
@@ -81,20 +83,20 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
         Navigator.of(context).pop();
         messenger
           ..hideCurrentSnackBar()
-          ..showSnackBar(const SnackBar(content: Text("You're the highest bidder")));
+          ..showSnackBar(SnackBar(content: Text(context.l10n.youreHighestBidder)));
       case BidAccepted(:final newPrice):
         // outbidByProxy / tieLostToEarlier: stay open, suggest a higher max.
         setState(() {
-          _outbidMessage =
-              "Another bidder's max is higher. Current price is now ${newPrice.toRupiah()}. "
-              'Try a higher max.';
+          _outbidMessage = context.l10n.outbidByMax(newPrice.toRupiah());
           _amount.clear();
         });
       case BidRejected(:final reason):
-        setState(() => _serverError = reason.message);
+        setState(() => _serverError = reason.text(context));
       case null:
         final error = ref.read(bidControllerProvider).error;
-        setState(() => _serverError = 'Could not place bid: ${friendlyError(error ?? 'unknown')}');
+        setState(
+          () => _serverError = context.l10n.couldNotPlaceBid(friendlyError(error ?? 'unknown')),
+        );
     }
   }
 
@@ -120,8 +122,8 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
     final valid = amount != null && !tooLow && !ended;
 
     final helper = isLeader
-        ? 'Enter more than your current max ${currentMax.toRupiah()}'
-        : 'Enter ${minimum.toRupiah()} or more';
+        ? context.l10n.enterMoreThanMax(currentMax.toRupiah())
+        : context.l10n.enterOrMore(minimum.toRupiah());
     final error = _serverError ?? (tooLow ? helper : null);
 
     return AnimatedPadding(
@@ -165,8 +167,11 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
                       const SizedBox(height: 2),
                       CountdownText(
                         endsAt: l.endsAt,
-                        prefix: 'Current ${l.currentPrice.toRupiah()} · ${l.bidCount} bids · ',
-                        suffix: ' left',
+                        prefix: context.l10n.currentPriceBids(
+                          l.currentPrice.toRupiah(),
+                          l.bidCount,
+                        ),
+                        suffix: context.l10n.timeLeftSuffix,
                         style: AppText.caption,
                       ),
                     ],
@@ -178,12 +183,12 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
             Semantics(
               header: true,
               child: Text(
-                isLeader ? 'Raise your maximum bid' : 'Place your maximum bid',
+                isLeader ? context.l10n.raiseYourMaxBid : context.l10n.placeYourMaxBid,
                 style: AppText.title,
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Your maximum bid', style: AppText.fieldLabel),
+            Text(context.l10n.yourMaxBid, style: AppText.fieldLabel),
             const SizedBox(height: 6),
             TextField(
               key: const Key('bidAmount'),
@@ -238,31 +243,27 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(AppRadius.input),
               ),
-              child: const Text.rich(
+              child: Text.rich(
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: 'How it works: ',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                      text: context.l10n.howItWorks,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    TextSpan(
-                      text:
-                          'we bid for you only as much as needed to keep you in the lead, up to '
-                          'your maximum. Others never see your maximum.',
-                    ),
+                    TextSpan(text: context.l10n.howItWorksBody),
                   ],
                 ),
                 style: AppText.small,
               ),
             ),
             const SizedBox(height: 12),
-            const Text.rich(
+            Text.rich(
               TextSpan(
-                text: 'By confirming, you agree to buy if you win. ',
+                text: context.l10n.agreeToBuy,
                 children: [
                   TextSpan(
-                    text: 'Bids are binding.',
-                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+                    text: context.l10n.bidsBinding,
+                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
                   ),
                 ],
               ),
@@ -272,22 +273,27 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
             if (ended)
               Semantics(
                 liveRegion: true,
-                child: const Padding(
-                  padding: EdgeInsets.only(bottom: 8),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
-                    'This auction has ended',
+                    context.l10n.auctionHasEnded,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
             PrimaryButton(
-              label: valid ? 'Confirm bid · ${amount.toRupiah()}' : 'Confirm bid',
+              label: valid
+                  ? context.l10n.confirmBidAmount(amount.toRupiah())
+                  : context.l10n.confirmBid,
               loading: busy,
               onPressed: valid ? () => _confirm(l, amount) : null,
             ),
             const SizedBox(height: 4),
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(context.l10n.cancel),
+            ),
           ],
         ),
       ),

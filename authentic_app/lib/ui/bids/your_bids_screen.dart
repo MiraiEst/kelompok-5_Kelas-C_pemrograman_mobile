@@ -172,7 +172,7 @@ class _SummaryBox extends StatelessWidget {
   Widget build(BuildContext context) => Expanded(
     child: Semantics(
       button: true,
-      label: '$label: ${value ?? 'loading'}',
+      label: '$label: ${value ?? context.l10n.loading}',
       excludeSemantics: true,
       child: Material(
         color: AppColors.surface,
@@ -331,8 +331,8 @@ class _BiddingCard extends ConsumerWidget {
       listing: l,
       emphasised: !leading,
       pill: leading
-          ? const StatusPill('Highest bidder', variant: PillVariant.filled)
-          : const StatusPill('Outbid', variant: PillVariant.outlined),
+          ? StatusPill(context.l10n.highestBidder, variant: PillVariant.filled)
+          : StatusPill(context.l10n.outbid, variant: PillVariant.outlined),
       priceLine: Text.rich(
         TextSpan(
           text: l.currentPrice.toRupiah(),
@@ -340,7 +340,7 @@ class _BiddingCard extends ConsumerWidget {
           children: [
             if (myMax != null)
               TextSpan(
-                text: ' · your max ${myMax.toRupiah()}',
+                text: context.l10n.yourMaxSuffix(myMax.toRupiah()),
                 style: AppText.caption.copyWith(fontWeight: FontWeight.w400),
               ),
           ],
@@ -348,7 +348,7 @@ class _BiddingCard extends ConsumerWidget {
       ),
       meta: CountdownText(
         endsAt: l.endsAt,
-        prefix: 'Ends in ',
+        prefix: context.l10n.endsIn,
         style: AppText.caption,
         onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),
       ),
@@ -376,7 +376,7 @@ class _WonCard extends ConsumerWidget {
     return _BidCard(
       listing: l,
       pill: paid
-          ? const StatusPill('Paid', variant: PillVariant.filled)
+          ? StatusPill(context.l10n.statusPaid, variant: PillVariant.filled)
           : _CountdownPill(until: payBy),
       priceLine: Text((l.finalPrice ?? l.currentPrice).toRupiah(), style: AppText.price),
       // The order is created by a Cloud Function; hide actions until it exists.
@@ -428,8 +428,11 @@ class _LostCard extends StatelessWidget {
     const Widget? secondChance = null;
     return _BidCard(
       listing: l,
-      pill: const StatusPill('Ended'),
-      priceLine: Text('Final ${(l.finalPrice ?? l.currentPrice).toRupiah()}', style: AppText.price),
+      pill: StatusPill(context.l10n.endedLabel),
+      priceLine: Text(
+        context.l10n.finalAmount((l.finalPrice ?? l.currentPrice).toRupiah()),
+        style: AppText.price,
+      ),
       action: secondChance,
     );
   }
@@ -481,19 +484,19 @@ class _WatchCard extends ConsumerWidget {
     final uid = ref.watch(authStateProvider).value?.uid;
     return _BidCard(
       listing: l,
-      pill: StatusPill(l.isLive(DateTime.now()) ? 'Watching' : 'Ended'),
+      pill: StatusPill(l.isLive(DateTime.now()) ? context.l10n.watching : context.l10n.endedLabel),
       priceLine: Text(l.currentPrice.toRupiah(), style: AppText.price),
       meta: l.isActive
           ? CountdownText(
               endsAt: l.endsAt,
-              suffix: ' left',
+              suffix: context.l10n.timeLeftSuffix,
               format: (d) => d.toShort(),
               style: AppText.caption,
               onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),
             )
           : null,
       trailing: IconButton(
-        tooltip: 'Remove from watchlist',
+        tooltip: context.l10n.removeFromWatchlist,
         icon: const Icon(Icons.favorite),
         onPressed: uid == null ? null : () => ref.read(userRepositoryProvider).toggleWatch(uid, l),
       ),

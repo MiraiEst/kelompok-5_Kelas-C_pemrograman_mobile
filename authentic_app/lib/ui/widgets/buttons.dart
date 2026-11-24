@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../../l10n/l10n.dart';
 
 /// Full-width pill button (ink background, white bold text, height 52).
 class PrimaryButton extends StatelessWidget {
@@ -87,7 +88,7 @@ class _ButtonContent extends StatelessWidget {
   Widget build(BuildContext context) {
     if (loading) {
       return Semantics(
-        label: '$label, loading',
+        label: context.l10n.labelLoading(label),
         child: SizedBox(
           width: 20,
           height: 20,

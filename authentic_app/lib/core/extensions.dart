@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
+
 /// Advanced Dart: extension methods on built-in types.
 
 final _rupiah = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
@@ -9,10 +11,14 @@ extension RupiahFormat on int {
   String toRupiah() => _rupiah.format(this);
 }
 
+/// "Ended" in the app's current language (Intl.defaultLocale is set from the
+/// device language in app.dart).
+String get _ended => currentL10n.endedLabel;
+
 extension CountdownFormat on Duration {
   /// Human friendly time-left text, e.g. "2d 4h", "13m 05s", "Ended".
   String toCountdown() {
-    if (isNegative || this == Duration.zero) return 'Ended';
+    if (isNegative || this == Duration.zero) return _ended;
     final d = inDays;
     final h = inHours.remainder(24);
     final m = inMinutes.remainder(60);
@@ -38,7 +44,7 @@ extension ClockFormat on Duration {
 
   /// Short "3h 20m" / "2d 4h" / "42m" for meta rows.
   String toShort() {
-    if (isNegative || this == Duration.zero) return 'Ended';
+    if (isNegative || this == Duration.zero) return _ended;
     if (inDays > 0) return '${inDays}d ${inHours.remainder(24)}h';
     if (inHours > 0) return '${inHours}h ${inMinutes.remainder(60)}m';
     if (inMinutes > 0) return '${inMinutes}m';

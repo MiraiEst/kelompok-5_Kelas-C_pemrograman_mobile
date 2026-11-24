@@ -8,6 +8,8 @@ import '../../core/extensions.dart';
 import '../../domain/models/app_user.dart';
 import '../../domain/models/bid.dart';
 import '../../domain/models/listing.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../providers/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/buttons.dart';
@@ -17,7 +19,7 @@ import '../widgets/user_avatar.dart';
 import 'place_bid_sheet.dart';
 
 /// "Sun 22 Nov, 18:30" in the device time zone.
-final endDateFormat = DateFormat('EEE d MMM, HH:mm');
+DateFormat get endDateFormat => DateFormat('EEE d MMM, HH:mm');
 
 class ListingDetailScreen extends ConsumerWidget {
   const ListingDetailScreen({super.key, required this.listingId});
@@ -36,7 +38,7 @@ class ListingDetailScreen extends ConsumerWidget {
       ),
       AsyncData() => Scaffold(
         appBar: AppBar(),
-        body: const EmptyState(icon: Icons.search_off, text: 'This listing no longer exists.'),
+        body: EmptyState(icon: Icons.search_off, text: context.l10n.listingGone),
       ),
       _ => Scaffold(
         appBar: AppBar(),
@@ -57,9 +59,9 @@ class _Detail extends ConsumerWidget {
     final categories = ref.watch(categoriesProvider).value ?? const [];
     final category = categories.where((c) => c.slug == l.category).firstOrNull?.name ?? l.category;
     final meta = [
-      l.condition.label,
+      l.condition.text(context),
       category,
-      if (l.location != null && l.location!.isNotEmpty) 'Ships from ${l.location}',
+      if (l.location != null && l.location!.isNotEmpty) context.l10n.shipsFrom(l.location!),
     ].join(' · ');
 
     return Scaffold(
@@ -82,7 +84,7 @@ class _Detail extends ConsumerWidget {
                 _PriceCard(listing: l),
                 if (user.isAdmin || l.sellerId == user.uid) _SellerControls(listing: l, user: user),
                 const SizedBox(height: 24),
-                const SectionHeader('Description'),
+                SectionHeader(context.l10n.description),
                 const SizedBox(height: 6),
                 _Description(text: l.description),
                 const SizedBox(height: 16),
@@ -130,7 +132,8 @@ class _GalleryState extends ConsumerState<_Gallery> {
     await SharePlus.instance.share(
       ShareParams(
         text:
-            '${l.title} · ${l.currentPrice.toRupiah()} on Imagi Auction\nimagiauction://listing/${l.id}',
+            '${context.l10n.shareText(l.title, l.currentPrice.toRupiah())}\n'
+            'imagiauction://listing/${l.id}',
         subject: l.title,
       ),
     );
@@ -157,7 +160,7 @@ class _GalleryState extends ConsumerState<_Gallery> {
                       onTap: () => _openFullScreen(i),
                       child: ListingImage(
                         url: urls[i],
-                        semanticLabel: 'Photo ${i + 1} of ${urls.length}. Tap to zoom.',
+                        semanticLabel: context.l10n.photoOf(i + 1, urls.length),
                       ),
                     ),
                   ),
@@ -174,20 +177,22 @@ class _GalleryState extends ConsumerState<_Gallery> {
                   children: [
                     RoundIconButton(
                       icon: Icons.arrow_back,
-                      tooltip: 'Back',
+                      tooltip: context.l10n.back,
                       onPressed: () => context.canPop() ? context.pop() : context.go('/home'),
                     ),
                     const Spacer(),
                     RoundIconButton(
                       icon: Icons.share_outlined,
-                      tooltip: 'Share',
+                      tooltip: context.l10n.share,
                       onPressed: _share,
                     ),
                     if (canWatch) ...[
                       const SizedBox(width: 8),
                       RoundIconButton(
                         icon: watched ? Icons.favorite : Icons.favorite_border,
-                        tooltip: watched ? 'Remove from watchlist' : 'Add to watchlist',
+                        tooltip: watched
+                            ? context.l10n.removeFromWatchlist
+                            : context.l10n.addToWatchlist,
                         onPressed: () =>
                             ref.read(userRepositoryProvider).toggleWatch(widget.user.uid, l),
                       ),
@@ -231,7 +236,7 @@ class _FullScreenGallery extends StatelessWidget {
       backgroundColor: AppColors.photoViewer,
       foregroundColor: AppColors.onInk,
       leading: IconButton(
-        tooltip: 'Close',
+        tooltip: context.l10n.close,
         icon: const Icon(Icons.close),
         onPressed: () => Navigator.of(context).pop(),
       ),
@@ -261,10 +266,12 @@ class _SellerRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(publicProfileProvider(listing.sellerId)).value;
     final name = listing.sellerName.masked();
-    final rating = profile?.summary() ?? 'New seller';
+    final rating = profile == null || profile.ratingCount == 0
+        ? context.l10n.newSeller
+        : context.l10n.ratingSummary(profile.positivePct, profile.ratingCount);
     return Semantics(
       button: true,
-      label: 'Seller $name, $rating',
+      label: context.l10n.sellerSemantics(name, rating),
       excludeSemantics: true,
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.input),
@@ -279,11 +286,11 @@ class _SellerRow extends ConsumerWidget {
                   const SizedBox(width: double.infinity), // full-width sheet
                   UserAvatar(name: listing.sellerName, size: 64),
                   const SizedBox(height: 12),
-                  Text('$name (seller)', style: AppText.sectionTitle),
+                  Text(context.l10n.nameSeller(name), style: AppText.sectionTitle),
                   const SizedBox(height: 4),
                   Text(rating, style: AppText.meta),
                   if (profile?.memberSince != null)
-                    Text('Member since ${profile!.memberSince!.year}', style: AppText.meta),
+                    Text(context.l10n.memberSince(profile!.memberSince!.year), style: AppText.meta),
                 ],
               ),
             ),
@@ -299,7 +306,10 @@ class _SellerRow extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('$name (seller)', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      context.l10n.nameSeller(name),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     Text(rating, style: AppText.caption),
                   ],
                 ),
@@ -330,13 +340,13 @@ class _StatusBanner extends ConsumerWidget {
 
     // Advanced Dart: switch expression over a record with guards.
     final (message, action) = switch ((ended, l.leaderId == uid)) {
-      (true, _) when l.winnerId == uid => ('You won this item!', true),
-      (true, _) => ("You didn't win this item.", false),
+      (true, _) when l.winnerId == uid => (context.l10n.youWonItem, true),
+      (true, _) => (context.l10n.youDidntWin, false),
       (false, true) => (
-        "You're the highest bidder · your max ${(myMax ?? l.leaderMax ?? l.currentPrice).toRupiah()}",
+        context.l10n.youreHighestMax((myMax ?? l.leaderMax ?? l.currentPrice).toRupiah()),
         false,
       ),
-      (false, false) => ("You've been outbid. Raise your max to get back in.", false),
+      (false, false) => (context.l10n.youveBeenOutbid, false),
     };
 
     return Semantics(
@@ -356,7 +366,10 @@ class _StatusBanner extends ConsumerWidget {
             Text(message, style: const TextStyle(fontWeight: FontWeight.w700)),
             if (action) ...[
               const SizedBox(height: 10),
-              PrimaryButton(label: 'Pay now', onPressed: () => context.push('/checkout/${l.id}')),
+              PrimaryButton(
+                label: context.l10n.payNow,
+                onPressed: () => context.push('/checkout/${l.id}'),
+              ),
             ],
           ],
         ),
@@ -378,9 +391,9 @@ class _PriceCard extends ConsumerWidget {
         ? l.finalPrice ?? l.buyNowPrice ?? l.currentPrice
         : l.finalPrice ?? l.currentPrice;
     final label = switch (l) {
-      _ when l.isBuyNowOnly => 'Buy It Now price',
-      _ when l.isActive => 'Current price',
-      _ => 'Final price',
+      _ when l.isBuyNowOnly => context.l10n.buyNowPrice,
+      _ when l.isActive => context.l10n.currentPrice,
+      _ => context.l10n.finalPrice,
     };
 
     return Container(
@@ -401,13 +414,13 @@ class _PriceCard extends ConsumerWidget {
             runSpacing: 4,
             children: [
               if (!l.isBuyNowOnly) ...[
-                Text('${l.bidCount} bids', style: AppText.small),
-                Text('$bidders bidders', style: AppText.small),
+                Text(context.l10n.nBids(l.bidCount), style: AppText.small),
+                Text(context.l10n.nBidders(bidders), style: AppText.small),
               ],
-              Text('${l.watcherCount} watching', style: AppText.small),
+              Text(context.l10n.nWatching(l.watcherCount), style: AppText.small),
               if (l.hasReserve && !l.isBuyNowOnly)
                 Text(
-                  l.reserveMet ? 'Reserve met' : 'Reserve not met',
+                  l.reserveMet ? context.l10n.reserveMet : context.l10n.reserveNotMet,
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
             ],
@@ -419,7 +432,7 @@ class _PriceCard extends ConsumerWidget {
                 Expanded(
                   child: CountdownText(
                     endsAt: l.endsAt,
-                    prefix: 'Ends in ',
+                    prefix: context.l10n.endsIn,
                     style: AppText.emphasis,
                     onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),
                   ),
@@ -429,9 +442,9 @@ class _PriceCard extends ConsumerWidget {
             )
           else
             Text(switch (l.status) {
-              ListingStatus.sold => 'Sold',
-              ListingStatus.unsold => 'Ended · not sold',
-              ListingStatus.ended => 'Ended by seller',
+              ListingStatus.sold => context.l10n.sold,
+              ListingStatus.unsold => context.l10n.endedNotSold,
+              ListingStatus.ended => context.l10n.endedBySeller,
               ListingStatus.active => '',
             }, style: AppText.emphasis),
         ],
@@ -507,7 +520,7 @@ class _DescriptionState extends State<_Description> {
               TextButton(
                 style: TextButton.styleFrom(padding: EdgeInsets.zero),
                 onPressed: () => setState(() => _expanded = !_expanded),
-                child: Text(_expanded ? 'Show less' : 'Read more'),
+                child: Text(_expanded ? context.l10n.showLess : context.l10n.readMore),
               ),
           ],
         );
@@ -526,19 +539,19 @@ class _InfoTable extends StatelessWidget {
     final hasNewFields = l.handlingDays != null;
     final rows = [
       (
-        'Shipping',
+        context.l10n.shipping,
         l.shippingCost == 0
-            ? 'Free · JNE / SiCepat'
+            ? context.l10n.freeCouriers
             : '${l.shippingCost.toRupiah()} · JNE / SiCepat',
       ),
-      ('Handling time', hasNewFields ? 'Ships in ${l.handlingDays} days' : '-'),
+      (context.l10n.handlingTime, hasNewFields ? context.l10n.shipsInDays(l.handlingDays!) : '-'),
       (
-        'Returns',
+        context.l10n.returns,
         !hasNewFields
             ? '-'
             : l.acceptsReturns
-            ? '${l.returnDays} days · buyer protection'
-            : 'No returns',
+            ? context.l10n.returnDaysProtection(l.returnDays)
+            : context.l10n.noReturns,
       ),
     ];
     return Column(
@@ -574,11 +587,11 @@ class _BidHistorySection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionHeader('Bid history'),
+        SectionHeader(context.l10n.bidHistory),
         switch (bids) {
-          AsyncValue(:final value?) when value.isEmpty => const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Text('No bids yet.', style: AppText.meta),
+          AsyncValue(:final value?) when value.isEmpty => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(context.l10n.noBidsYet, style: AppText.meta),
           ),
           AsyncValue(:final value?) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -599,13 +612,13 @@ class _BidHistorySection extends ConsumerWidget {
                           controller: controller,
                           padding: const EdgeInsets.all(16),
                           children: [
-                            SectionHeader('All ${value.length} bids'),
+                            SectionHeader(context.l10n.allNBids(value.length)),
                             BidHistoryList(bids: value),
                           ],
                         ),
                       ),
                     ),
-                    child: Text('See all ${value.length} bids'),
+                    child: Text(context.l10n.seeAllNBids(value.length)),
                   ),
                 ),
             ],
@@ -614,7 +627,7 @@ class _BidHistorySection extends ConsumerWidget {
           _ => const LinearProgressIndicator(),
         },
         const SizedBox(height: 8),
-        const Text("Names are masked. Nobody's maximum bid is ever shown.", style: AppText.caption),
+        Text(context.l10n.namesMasked, style: AppText.caption),
       ],
     );
   }
@@ -653,7 +666,7 @@ class BidHistoryList extends StatelessWidget {
                           text: b.maskedName,
                           children: [
                             TextSpan(
-                              text: ' (${perBidder[b.userId]} bids)',
+                              text: ' (${context.l10n.nBids(perBidder[b.userId] ?? 0)})',
                               style: const TextStyle(color: AppColors.muted),
                             ),
                           ],
@@ -686,18 +699,21 @@ class _SellerControls extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('End this listing?'),
-        content: const Text('It will be removed from search right away.'),
+        title: Text(context.l10n.endListingQ),
+        content: Text(context.l10n.endListingBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('End listing')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.l10n.endListingAction),
+          ),
         ],
       ),
     );
     if (ok != true) return;
     try {
       await ref.read(listingRepositoryProvider).endEarly(listing, user);
-      if (context.mounted) showSnack(context, 'Listing ended.');
+      if (context.mounted) showSnack(context, context.l10n.listingEndedSnack);
     } catch (e) {
       if (context.mounted) showSnack(context, friendlyError(e));
     }
@@ -709,7 +725,7 @@ class _SellerControls extends ConsumerWidget {
           .read(listingRepositoryProvider)
           .relist(listing, user, AuctionDuration.sevenDays);
       if (context.mounted) {
-        showSnack(context, 'Relisted for 7 days.');
+        showSnack(context, context.l10n.relistedSnack);
         context.pushReplacement('/listing/$id');
       }
     } catch (e) {
@@ -731,13 +747,17 @@ class _SellerControls extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (user.isAdmin && !isSeller)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: Text('Admin controls', style: AppText.groupLabel),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(context.l10n.adminControls, style: AppText.groupLabel),
             ),
-          if (canEnd) SecondaryButton(label: 'End listing', onPressed: () => _end(context, ref)),
+          if (canEnd)
+            SecondaryButton(
+              label: context.l10n.endListingAction,
+              onPressed: () => _end(context, ref),
+            ),
           if (canRelist)
-            PrimaryButton(label: 'Relist (7 days)', onPressed: () => _relist(context, ref)),
+            PrimaryButton(label: context.l10n.relist7Days, onPressed: () => _relist(context, ref)),
         ],
       ),
     );
@@ -754,18 +774,18 @@ class _BottomBar extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Buy It Now'),
-        content: Text('Buy "${listing.title}" for ${price.toRupiah()}? This ends the listing.'),
+        title: Text(context.l10n.buyItNow),
+        content: Text(context.l10n.buyNowConfirm(listing.title, price.toRupiah())),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Buy')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.cancel)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.l10n.buy)),
         ],
       ),
     );
     if (ok != true) return;
     try {
       await ref.read(listingRepositoryProvider).buyNow(listingId: listing.id, buyer: user);
-      if (context.mounted) showSnack(context, 'You bought it!');
+      if (context.mounted) showSnack(context, context.l10n.youBoughtIt);
     } catch (e) {
       if (context.mounted) showSnack(context, friendlyError(e));
     }
@@ -794,13 +814,13 @@ class _BottomBar extends ConsumerWidget {
             children: [
               if (l.isBuyNowOnly)
                 PrimaryButton(
-                  label: 'Buy It Now · ${(l.buyNowPrice ?? 0).toRupiah()}',
+                  label: context.l10n.buyItNowPrice((l.buyNowPrice ?? 0).toRupiah()),
                   onPressed: showBuyNow ? () => _buyNow(context, ref) : null,
                 )
               else ...[
                 if (showBuyNow) ...[
                   SecondaryButton(
-                    label: 'Buy It Now ${l.buyNowPrice!.toRupiah()}',
+                    label: context.l10n.buyItNowPrice(l.buyNowPrice!.toRupiah()),
                     onPressed: () => _buyNow(context, ref),
                   ),
                   const SizedBox(height: 10),
@@ -812,7 +832,7 @@ class _BottomBar extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('Minimum bid', style: AppText.caption),
+                          Text(context.l10n.minimumBid, style: AppText.caption),
                           Text(l.minimumNextBid.toRupiah(), style: AppText.emphasis),
                         ],
                       ),
@@ -821,7 +841,7 @@ class _BottomBar extends ConsumerWidget {
                     Expanded(
                       flex: 2,
                       child: PrimaryButton(
-                        label: isLeader ? 'Raise max bid' : 'Place max bid',
+                        label: isLeader ? context.l10n.raiseMaxBid : context.l10n.placeMaxBid,
                         onPressed: () => showPlaceBidSheet(context, l.id),
                       ),
                     ),

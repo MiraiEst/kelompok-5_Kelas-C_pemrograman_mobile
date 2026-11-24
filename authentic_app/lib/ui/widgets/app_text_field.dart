@@ -91,6 +91,11 @@ class AppTextField extends StatelessWidget {
           autofillHints: autofillHints,
           onChanged: onChanged,
           onFieldSubmitted: onSubmitted,
+          // Tapping anywhere outside the field closes the keyboard.
+          onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+          // Keep the field plus its error text and a bit of the form below it
+          // above the keyboard (the default only clears the input box itself).
+          scrollPadding: const EdgeInsets.fromLTRB(20, 20, 20, 140),
           inputFormatters: rupiah
               ? [FilteringTextInputFormatter.digitsOnly, ThousandsFormatter()]
               : inputFormatters,

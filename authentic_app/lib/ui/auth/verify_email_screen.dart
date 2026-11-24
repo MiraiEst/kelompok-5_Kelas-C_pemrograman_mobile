@@ -63,7 +63,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final email = ref.watch(authStateProvider).value?.email ?? 'your email';
+    final email = ref.watch(authStateProvider).value?.email ?? context.l10n.yourEmail;
     return Scaffold(
       body: AuthBody(
         children: [

@@ -205,5 +205,809 @@
         "type": "int"
       }
     }
+  },
+  "statusAwaitingPayment": "Awaiting payment",
+  "statusPaid": "Paid",
+  "statusShipped": "Shipped",
+  "statusInTransit": "In transit",
+  "statusDelivered": "Delivered",
+  "statusCompleted": "Completed",
+  "statusCancelled": "Cancelled",
+  "listingActive": "Active",
+  "listingSold": "Sold",
+  "listingUnsold": "Unsold",
+  "listingEnded": "Ended",
+  "conditionNew": "New",
+  "conditionUsed": "Used",
+  "conditionForParts": "For parts",
+  "formatAuction": "Auction",
+  "formatBuyNow": "Buy It Now",
+  "formatBoth": "Both",
+  "durationTest": "5 min (test)",
+  "durationDays": "{n}d",
+  "@durationDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "prefOutbid": "Outbid",
+  "prefEndingSoon": "Ending soon",
+  "prefWonLost": "Won / lost",
+  "prefNewBid": "New bid on my item",
+  "prefReserveMet": "Reserve met",
+  "prefOrders": "Orders & shipping",
+  "prefSecondChance": "Second chance",
+  "listingEndedSnack": "Listing ended.",
+  "relistedSnack": "Relisted for 7 days.",
+  "noListingsHere": "No listings here.",
+  "endListing": "End",
+  "relist": "Relist",
+  "bidsWatching": "{bids} bids · {watchers} watching",
+  "@bidsWatching": {
+    "placeholders": {
+      "bids": {
+        "type": "int"
+      },
+      "watchers": {
+        "type": "int"
+      }
+    }
+  },
+  "nothingToShip": "Nothing to ship right now.",
+  "purchasesEmpty": "Items you buy will appear here.",
+  "payoutSaved": "Payout account saved.",
+  "payoutIntro": "Sale proceeds are paid to this account after the buyer confirms delivery.",
+  "changeAccount": "Change account",
+  "bank": "Bank",
+  "chooseYourBank": "Choose your bank",
+  "chooseABank": "Choose a bank",
+  "accountNumber": "Account number",
+  "enterValidAccountNumber": "Enter a valid account number",
+  "accountHolderName": "Account holder name",
+  "enterAccountName": "Enter the name on the account",
+  "push": "Push",
+  "notifSettingsNote": "In-app notifications always appear in the Notifications list. These switches control pushes to your phone.",
+  "faqProxyQ": "How does proxy bidding work?",
+  "faqProxyA": "Enter the most you are willing to pay. We bid for you only as much as needed to keep you in the lead, up to that maximum. Nobody else ever sees your maximum.",
+  "faqReserveQ": "What is a reserve price?",
+  "faqReserveA": "A hidden minimum set by the seller. If bidding ends below it, the item does not sell. The listing shows \"Reserve met\" once a bid reaches it.",
+  "faqProtectionQ": "What is buyer protection?",
+  "faqProtectionA": "Your payment is held by Imagi Auction and only released to the seller after you confirm delivery. If the item does not arrive or is not as described, use \"Report a problem\" on the order.",
+  "faqCostQ": "What does it cost?",
+  "faqCostA": "Buyers pay the winning price, shipping and a service fee of {service}% (max Rp 10.000). Sellers pay a final value fee of {fee}% of the sale price.",
+  "@faqCostA": {
+    "placeholders": {
+      "service": {
+        "type": "int"
+      },
+      "fee": {
+        "type": "int"
+      }
+    }
+  },
+  "legalUpdated": "Last updated: November 2026",
+  "changeProfilePhoto": "Change profile photo",
+  "changePhoto": "Change photo",
+  "shownMasked": "Shown masked when you bid",
+  "emailCantChange": "Email can't be changed here.",
+  "defaultLabel": "Default",
+  "deleteAddressQ": "Delete this address?",
+  "delete": "Delete",
+  "chooseAddress": "Choose address",
+  "noAddresses": "No saved addresses yet.",
+  "addAddress": "Add address",
+  "addressOptions": "Address options",
+  "edit": "Edit",
+  "setAsDefault": "Set as default",
+  "required": "Required",
+  "editAddress": "Edit address",
+  "recipientName": "Recipient name",
+  "streetAddress": "Street address",
+  "streetHint": "Street, number, RT/RW, district",
+  "city": "City",
+  "province": "Province",
+  "postalCode": "Postal code",
+  "enter5Digits": "Enter 5 digits",
+  "useAsDefaultAddress": "Use as default address",
+  "saveAddress": "Save address",
+  "paymentExpired": "The payment window for this order has expired.",
+  "couldNotOpenPayment": "Could not open the payment page.",
+  "noConnection": "No connection. Check your internet and try again.",
+  "orderCantBePaid": "This order can no longer be paid.",
+  "paymentsNotSetUp": "Payments are not set up yet (Cloud Functions not deployed).",
+  "paymentFailed": "Payment failed. Please try again.",
+  "checkout": "Checkout",
+  "orderPreparing": "Your order is being prepared. Check back in a moment.",
+  "wonFor": "Won for {price}",
+  "@wonFor": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "payWithin": "Pay within",
+  "shippingAddress": "Shipping address",
+  "add": "Add",
+  "change": "Change",
+  "addShippingAddress": "Add shipping address",
+  "courier": "Courier",
+  "free": "Free",
+  "etaDays": "{range} days",
+  "@etaDays": {
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentMethod": "Payment method",
+  "payVirtualAccount": "Virtual account",
+  "payQris": "QRIS",
+  "payQrisDetail": "Scan with any banking or e-wallet app",
+  "payEWallet": "E-wallet",
+  "heldNote": "Your money is held by Imagi Auction and only released to the seller after you confirm delivery.",
+  "winningPrice": "Winning price",
+  "shipping": "Shipping",
+  "serviceFee": "Service fee",
+  "total": "Total",
+  "payWithXendit": "Pay with Xendit",
+  "orderIsPaid": "This order is paid.",
+  "paymentReceived": "Payment received",
+  "paymentReceivedBody": "We've told the seller. You'll get a notification when it ships.",
+  "youreHighestBidder": "You're the highest bidder",
+  "outbidByMax": "Another bidder's max is higher. Current price is now {price}. Try a higher max.",
+  "@outbidByMax": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "couldNotPlaceBid": "Could not place bid: {error}",
+  "@couldNotPlaceBid": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "enterMoreThanMax": "Enter more than your current max {amount}",
+  "@enterMoreThanMax": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "enterOrMore": "Enter {amount} or more",
+  "@enterOrMore": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "currentPriceBids": "Current {price} · {count} bids ·",
+  "@currentPriceBids": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeLeftSuffix": "left",
+  "raiseYourMaxBid": "Raise your maximum bid",
+  "placeYourMaxBid": "Place your maximum bid",
+  "yourMaxBid": "Your maximum bid",
+  "howItWorks": "How it works:",
+  "howItWorksBody": "we bid for you only as much as needed to keep you in the lead, up to your maximum. Others never see your maximum.",
+  "agreeToBuy": "By confirming, you agree to buy if you win.",
+  "bidsBinding": "Bids are binding.",
+  "auctionHasEnded": "This auction has ended",
+  "confirmBid": "Confirm bid",
+  "confirmBidAmount": "Confirm bid · {amount}",
+  "@confirmBidAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "rejectClosed": "This auction has ended.",
+  "rejectSeller": "Sellers cannot bid on their own listings.",
+  "rejectInvalid": "Enter a valid amount.",
+  "rejectBelowMin": "Your maximum must be at least {amount}.",
+  "@rejectBelowMin": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "rejectCannotLower": "You are already leading with a maximum of {amount}. You can only raise it.",
+  "@rejectCannotLower": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "countdownEnded": "Ended",
+  "listingGone": "This listing no longer exists.",
+  "shipsFrom": "Ships from {place}",
+  "@shipsFrom": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "description": "Description",
+  "shareText": "{title} · {price} on Imagi Auction",
+  "@shareText": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "photoOf": "Photo {n} of {total}. Tap to zoom.",
+  "@photoOf": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "share": "Share",
+  "removeFromWatchlist": "Remove from watchlist",
+  "addToWatchlist": "Add to watchlist",
+  "newSeller": "New seller",
+  "sellerSemantics": "Seller {name}, {rating}",
+  "@sellerSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "rating": {
+        "type": "String"
+      }
+    }
+  },
+  "nameSeller": "{name} (seller)",
+  "@nameSeller": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "youWonItem": "You won this item!",
+  "youDidntWin": "You didn't win this item.",
+  "youreHighestMax": "You're the highest bidder · your max {amount}",
+  "@youreHighestMax": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "youveBeenOutbid": "You've been outbid. Raise your max to get back in.",
+  "buyNowPrice": "Buy It Now price",
+  "currentPrice": "Current price",
+  "finalPrice": "Final price",
+  "nBids": "{count} bids",
+  "@nBids": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nBidders": "{count} bidders",
+  "@nBidders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nWatching": "{count} watching",
+  "@nWatching": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reserveMet": "Reserve met",
+  "reserveNotMet": "Reserve not met",
+  "endedNotSold": "Ended · not sold",
+  "endedBySeller": "Ended by seller",
+  "showLess": "Show less",
+  "readMore": "Read more",
+  "freeCouriers": "Free · JNE / SiCepat",
+  "handlingTime": "Handling time",
+  "shipsInDays": "Ships in {n} days",
+  "@shipsInDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "returns": "Returns",
+  "returnDaysProtection": "{n} days · buyer protection",
+  "@returnDaysProtection": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "noReturns": "No returns",
+  "bidHistory": "Bid history",
+  "noBidsYet": "No bids yet.",
+  "allNBids": "All {count} bids",
+  "@allNBids": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "seeAllNBids": "See all {count} bids",
+  "@seeAllNBids": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "namesMasked": "Names are masked. Nobody's maximum bid is ever shown.",
+  "endListingQ": "End this listing?",
+  "endListingBody": "It will be removed from search right away.",
+  "endListingAction": "End listing",
+  "adminControls": "Admin controls",
+  "relist7Days": "Relist (7 days)",
+  "buyItNow": "Buy It Now",
+  "buyNowConfirm": "Buy \"{title}\" for {price}? This ends the listing.",
+  "@buyNowConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "buy": "Buy",
+  "youBoughtIt": "You bought it!",
+  "buyItNowPrice": "Buy It Now · {price}",
+  "@buyItNowPrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "minimumBid": "Minimum bid",
+  "order": "Order",
+  "orderNumber": "Order #{number}",
+  "@orderNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "soldTo": "Sold to {name}",
+  "@soldTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "boughtFrom": "Bought from {name}",
+  "@boughtFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "orderNotFound": "Order not found.",
+  "amountPaid": "{amount} paid",
+  "@amountPaid": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "problemReportedBanner": "A problem was reported. Payment to the seller is on hold until it is resolved.",
+  "orderCancelled": "This order was cancelled.",
+  "markInTransit": "Mark in transit",
+  "markedInTransit": "Marked in transit.",
+  "markDelivered": "Mark delivered",
+  "markedDelivered": "Marked delivered.",
+  "shipTo": "Ship to",
+  "iReceivedItem": "I received the item",
+  "confirmReceivedQ": "Confirm you received the item?",
+  "confirmReceivedBody": "This completes the order and releases the payment to the seller.",
+  "notYet": "Not yet",
+  "confirm": "Confirm",
+  "orderCompleted": "Order completed.",
+  "reportProblem": "Report a problem",
+  "buyerProtectionNote": "Not received or not as described? You're covered by buyer protection.",
+  "waitingForPayment": "Waiting for payment",
+  "buyerHas": "Buyer has",
+  "toPaySuffix": "to pay",
+  "autoConfirmed": "Auto-confirmed {days} days after delivery",
+  "@autoConfirmed": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "trackingCopied": "Tracking number copied.",
+  "copyTracking": "Copy tracking number",
+  "stepDone": "done",
+  "stepCurrent": "in progress",
+  "stepUpcoming": "upcoming",
+  "markedShipped": "Marked as shipped. The buyer has been notified.",
+  "shipThisOrder": "Ship this order",
+  "shipWithinDays": "Ship within {days} days of payment.",
+  "@shipWithinDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "trackingNumber": "Tracking number",
+  "enterTracking": "Enter the tracking number",
+  "markAsShipped": "Mark as shipped",
+  "reasonNotReceived": "Not received",
+  "reasonNotAsDescribed": "Not as described",
+  "reasonDamaged": "Damaged",
+  "reasonOther": "Other",
+  "describeProblem": "Describe the problem in a few words (10+ characters).",
+  "problemReported": "Problem reported. We'll look into it.",
+  "whatHappened": "What happened?",
+  "whatHappenedHint": "Tell us what is wrong with the item or delivery",
+  "removePhoto": "Remove photo",
+  "addPhotoOptional": "Add photo (optional)",
+  "submitReport": "Submit report",
+  "ratingPositive": "Positive",
+  "ratingNeutral": "Neutral",
+  "ratingNegative": "Negative",
+  "thanksFeedback": "Thanks for your feedback!",
+  "rateSeller": "Rate the seller",
+  "rateBuyer": "Rate the buyer",
+  "ratedSeller": "You rated this seller. Thanks!",
+  "ratedBuyer": "You rated this buyer. Thanks!",
+  "comment": "Comment",
+  "sendRating": "Send rating",
+  "buyerFallback": "buyer",
+  "sellerFallback": "seller",
+  "errNoPhotos": "Add at least 1 photo",
+  "errTooManyPhotos": "Maximum {max} photos",
+  "@errTooManyPhotos": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errPickCategory": "Pick a category",
+  "errPriceTooLow": "At least Rp 1.000",
+  "errNotAboveStart": "Must be higher than the starting price",
+  "errNoBuyNow": "Enter the Buy It Now price",
+  "errBelowReserve": "Must be at least the reserve price",
+  "continueDraftQ": "Continue your draft?",
+  "draftSavedAs": "\"{title}\" was saved as a draft.",
+  "@draftSavedAs": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "untitled": "Untitled",
+  "startNew": "Start new",
+  "continueLabel": "Continue",
+  "draftSaved": "Draft saved.",
+  "couldNotSaveDraft": "Could not save draft: {error}",
+  "@couldNotSaveDraft": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "takePhoto": "Take a photo",
+  "chooseFromGallery": "Choose from gallery",
+  "onlyNPhotos": "Only {max} photos allowed.",
+  "@onlyNPhotos": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "rateUnavailable": "Exchange rate unavailable. Enter the starting price yourself.",
+  "couldNotCreateListing": "Could not create listing: {error}",
+  "@couldNotCreateListing": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "discardQ": "Discard this listing?",
+  "discardBody": "Your changes will be lost. Tap \"Save draft\" to keep them.",
+  "keepEditing": "Keep editing",
+  "discard": "Discard",
+  "saveDraft": "Save draft",
+  "importFromCatalog": "Import from catalog",
+  "title": "Title",
+  "titleHint": "Brand, model, size, colour",
+  "descriptionHint": "Condition, what's included, any flaws",
+  "category": "Category",
+  "chooseCategory": "Choose a category",
+  "condition": "Condition",
+  "format": "Format",
+  "buyNowOnlyNote": "Fixed price, no bids. The first buyer gets it.",
+  "startingPrice": "Starting price",
+  "reservePrice": "Reserve price",
+  "optionalHidden": "(optional, hidden)",
+  "reserveHelper": "The item won't sell below this price",
+  "duration": "Duration",
+  "endsOn": "Ends {date}",
+  "@endsOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "shippingAndReturns": "Shipping & returns",
+  "shippingCost": "Shipping cost",
+  "zeroFree": "0 = free",
+  "shipsWithin": "Ships within",
+  "nDays": "{n, plural, =1{1 day} other{{n} days}}",
+  "@nDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "itemLocation": "Item location",
+  "itemLocationHint": "City, e.g. Makassar",
+  "acceptReturns": "Accept returns",
+  "within7Days": "Within 7 days",
+  "listItem": "List item",
+  "finalValueFee": "Final value fee: {fee}% of the sale price",
+  "@finalValueFee": {
+    "placeholders": {
+      "fee": {
+        "type": "int"
+      }
+    }
+  },
+  "photos": "Photos",
+  "reorderHint": "Long-press to reorder. The first photo is the cover.",
+  "addPhotos": "Add photos",
+  "cover": "Cover",
+  "uploadingPhoto": "Uploading photo {n}",
+  "@uploadingPhoto": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "removePhotoN": "Remove photo {n}",
+  "@removePhotoN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "photo1Cover": "Photo 1, cover",
+  "photoN": "Photo {n}",
+  "@photoN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "searchProductsHint": "Search products, e.g. \"watch\", \"laptop\"",
+  "noProductsFound": "No products found.",
+  "couldNotSignOut": "Could not sign out: {error}",
+  "@couldNotSignOut": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAccountQ": "Delete your account?",
+  "deleteAccountBody": "Your profile, addresses, payout account, drafts and watchlist will be deleted. Finished orders are kept for the other party. This cannot be undone.",
+  "deleteWord": "DELETE",
+  "typeToConfirm": "Type {word} to confirm",
+  "@typeToConfirm": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleted": "Your account was deleted.",
+  "wrongPasswordNothingDeleted": "Wrong password. Nothing was deleted.",
+  "cancelledNothingDeleted": "Cancelled. Nothing was deleted.",
+  "couldNotDeleteAccount": "Could not delete the account.",
+  "enterYourPassword": "Enter your password",
+  "liveAuctionsBlockDelete": "You have live auctions with bids. Wait until they end.",
+  "highestBidder": "Highest bidder",
+  "yourMaxSuffix": "· your max {amount}",
+  "@yourMaxSuffix": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "endedLabel": "Ended",
+  "finalAmount": "Final {amount}",
+  "@finalAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "watching": "Watching",
+  "trendingSemantics": "Rank {rank}, {title}, {price}, {count} bids",
+  "@trendingSemantics": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recentBidsSemantics": ", {count} bids in the last hour",
+  "@recentBidsSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unreadPrefix": "Unread.",
+  "avatarOf": "Avatar of {name}",
+  "@avatarOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "buyItNowSpace": "Buy It Now {price}",
+  "@buyItNowSpace": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "buyItNowPrefix": "Buy It Now ·",
+  "nBidsPrefix": "{count} bids ·",
+  "@nBidsPrefix": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminsOnlyMsg": "Admins only.",
+  "adminAllListings": "Admin · All listings",
+  "noListings": "No listings.",
+  "done": "Done.",
+  "endListingNow": "End listing now",
+  "deleteListing": "Delete listing",
+  "noPermission": "You don't have permission to do that.",
+  "cannotBuyOwn": "You cannot buy your own item.",
+  "buyNowUnavailable": "Buy It Now is no longer available.",
+  "cannotEndWithBids": "Listings with bids cannot be ended early.",
+  "notSignedIn": "Not signed in.",
+  "authInvalidEmail": "That email address is not valid.",
+  "authDisabled": "This account has been disabled.",
+  "authEmailInUse": "An account already exists for that email.",
+  "authWeakPassword": "Use at least 8 characters for the password.",
+  "authWrongCredentials": "Wrong email or password.",
+  "authTooMany": "Too many attempts. Try again later.",
+  "authGoogleCancelled": "Google sign-in was cancelled.",
+  "authFailed": "Authentication failed.",
+  "somethingWrong": "Something went wrong: {error}",
+  "@somethingWrong": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "bidsWatchingPrefix": "{bids} bids · {watchers} watching ·",
+  "@bidsWatchingPrefix": {
+    "placeholders": {
+      "bids": {
+        "type": "int"
+      },
+      "watchers": {
+        "type": "int"
+      }
+    }
+  },
+  "loading": "loading",
+  "labelLoading": "{label}, loading",
+  "@labelLoading": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "yourEmail": "your email",
+  "auctionCardSemantics": "{title}, {price}, {count} bids",
+  "@auctionCardSemantics": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reminder1h": "1 hour left",
+  "reminder10m": "10 minutes left",
+  "reminderBody": "\"{title}\" ends soon. Check the price and place your final bid.",
+  "@reminderBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   }
 }
