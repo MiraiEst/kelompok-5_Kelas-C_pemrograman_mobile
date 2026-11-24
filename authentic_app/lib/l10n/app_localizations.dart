@@ -1116,7 +1116,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqProtectionA.
   ///
   /// In en, this message translates to:
-  /// **'Your payment is held by Imagi Auction and only released to the seller after you confirm delivery. If the item does not arrive or is not as described, use \"Report a problem\" on the order.'**
+  /// **'Your payment is held by Authentic and only released to the seller after you confirm delivery. If the item does not arrive or is not as described, use \"Report a problem\" on the order.'**
   String get faqProtectionA;
 
   /// No description provided for @faqCostQ.
@@ -1416,7 +1416,7 @@ abstract class AppLocalizations {
   /// No description provided for @heldNote.
   ///
   /// In en, this message translates to:
-  /// **'Your money is held by Imagi Auction and only released to the seller after you confirm delivery.'**
+  /// **'Your money is held by Authentic and only released to the seller after you confirm delivery.'**
   String get heldNote;
 
   /// No description provided for @winningPrice.
@@ -1626,7 +1626,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareText.
   ///
   /// In en, this message translates to:
-  /// **'{title} · {price} on Imagi Auction'**
+  /// **'{title} · {price} on Authentic'**
   String shareText(String title, String price);
 
   /// No description provided for @photoOf.

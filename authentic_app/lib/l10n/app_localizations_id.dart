@@ -554,7 +554,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get faqProtectionA =>
-      'Pembayaran Anda ditahan oleh Imagi Auction dan baru diteruskan ke penjual setelah Anda mengonfirmasi barang diterima. Jika barang tidak sampai atau tidak sesuai deskripsi, gunakan \"Laporkan masalah\" pada pesanan.';
+      'Pembayaran Anda ditahan oleh Authentic dan baru diteruskan ke penjual setelah Anda mengonfirmasi barang diterima. Jika barang tidak sampai atau tidak sesuai deskripsi, gunakan \"Laporkan masalah\" pada pesanan.';
 
   @override
   String get faqCostQ => 'Berapa biayanya?';
@@ -711,7 +711,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get heldNote =>
-      'Uang Anda ditahan oleh Imagi Auction dan baru diteruskan ke penjual setelah Anda mengonfirmasi barang diterima.';
+      'Uang Anda ditahan oleh Authentic dan baru diteruskan ke penjual setelah Anda mengonfirmasi barang diterima.';
 
   @override
   String get winningPrice => 'Harga menang';
@@ -837,7 +837,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String shareText(String title, String price) {
-    return '$title · $price di Imagi Auction';
+    return '$title · $price di Authentic';
   }
 
   @override

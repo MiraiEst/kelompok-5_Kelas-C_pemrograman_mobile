@@ -30,7 +30,7 @@ class _AuctionAppState extends ConsumerState<AuctionApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'Imagi Auction',
+      title: 'Authentic',
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       theme: buildAppTheme(),

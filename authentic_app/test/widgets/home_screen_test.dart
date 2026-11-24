@@ -31,7 +31,7 @@ void main() {
     await pumpApp(tester, const HomeScreen(), overrides: overrides());
     await tester.pump();
 
-    expect(find.text('Imagi Auction'), findsOneWidget);
+    expect(find.text('Authentic'), findsOneWidget);
     expect(find.text('Search auctions'), findsOneWidget);
     expect(find.text('Ending soon'), findsOneWidget);
     expect(find.text('All auctions'), findsOneWidget);

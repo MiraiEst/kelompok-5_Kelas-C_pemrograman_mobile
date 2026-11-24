@@ -53,8 +53,8 @@ const _confirmDays = AppConfig.autoConfirmDays;
 
 const _termsEn = [
   (
-    '1. About Imagi Auction',
-    'Imagi Auction is an online auction marketplace where registered users can list items for '
+    '1. About Authentic',
+    'Authentic is an online auction marketplace where registered users can list items for '
         'auction and bid on items listed by others. By creating an account you agree to these terms.',
   ),
   (
@@ -89,7 +89,7 @@ const _termsEn = [
   ),
   (
     '7. Liability',
-    'Imagi Auction is a platform connecting buyers and sellers; the item itself is the seller\'s '
+    'Authentic is a platform connecting buyers and sellers; the item itself is the seller\'s '
         'responsibility. The app is provided as is, as part of a student project, and may be '
         'unavailable at times.',
   ),
@@ -102,8 +102,8 @@ const _termsEn = [
 
 const _termsId = [
   (
-    '1. Tentang Imagi Auction',
-    'Imagi Auction adalah marketplace lelang online tempat pengguna terdaftar dapat melelang barang '
+    '1. Tentang Authentic',
+    'Authentic adalah marketplace lelang online tempat pengguna terdaftar dapat melelang barang '
         'dan menawar barang milik pengguna lain. Dengan membuat akun, Anda menyetujui ketentuan ini.',
   ),
   (
@@ -140,7 +140,7 @@ const _termsId = [
   ),
   (
     '7. Tanggung jawab',
-    'Imagi Auction adalah platform yang mempertemukan pembeli dan penjual; barang itu sendiri '
+    'Authentic adalah platform yang mempertemukan pembeli dan penjual; barang itu sendiri '
         'menjadi tanggung jawab penjual. Aplikasi disediakan apa adanya sebagai bagian dari proyek '
         'mahasiswa dan sewaktu-waktu bisa tidak tersedia.',
   ),
@@ -177,7 +177,7 @@ const _privacyEn = [
   (
     'Your choices',
     'You can edit your profile and addresses, switch notifications off in Notification settings '
-        'and sign out at any time. To delete your account and data, contact the Imagi Auction team.',
+        'and sign out at any time. To delete your account and data, contact the Authentic team.',
   ),
 ];
 
@@ -209,6 +209,6 @@ const _privacyId = [
   (
     'Pilihan Anda',
     'Anda dapat mengubah profil dan alamat, mematikan notifikasi di Pengaturan notifikasi, dan '
-        'keluar kapan saja. Untuk menghapus akun dan data Anda, hubungi tim Imagi Auction.',
+        'keluar kapan saja. Untuk menghapus akun dan data Anda, hubungi tim Authentic.',
   ),
 ];

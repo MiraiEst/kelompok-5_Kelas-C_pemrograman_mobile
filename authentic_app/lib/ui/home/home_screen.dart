@@ -169,7 +169,7 @@ class _Header extends ConsumerWidget {
           Expanded(
             child: Semantics(
               header: true,
-              child: const Text('Imagi Auction', style: AppText.title),
+              child: const Text('Authentic', style: AppText.title),
             ),
           ),
           IconButton(

@@ -10,7 +10,7 @@ class LogoPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'Imagi Auction',
+    label: 'Authentic',
     image: true,
     child: Container(
       width: 72,

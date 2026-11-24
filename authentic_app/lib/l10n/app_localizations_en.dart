@@ -552,7 +552,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get faqProtectionA =>
-      'Your payment is held by Imagi Auction and only released to the seller after you confirm delivery. If the item does not arrive or is not as described, use \"Report a problem\" on the order.';
+      'Your payment is held by Authentic and only released to the seller after you confirm delivery. If the item does not arrive or is not as described, use \"Report a problem\" on the order.';
 
   @override
   String get faqCostQ => 'What does it cost?';
@@ -709,7 +709,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get heldNote =>
-      'Your money is held by Imagi Auction and only released to the seller after you confirm delivery.';
+      'Your money is held by Authentic and only released to the seller after you confirm delivery.';
 
   @override
   String get winningPrice => 'Winning price';
@@ -835,7 +835,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String shareText(String title, String price) {
-    return '$title · $price on Imagi Auction';
+    return '$title · $price on Authentic';
   }
 
   @override

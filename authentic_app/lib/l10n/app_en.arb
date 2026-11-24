@@ -274,7 +274,7 @@
   "faqReserveQ": "What is a reserve price?",
   "faqReserveA": "A hidden minimum set by the seller. If bidding ends below it, the item does not sell. The listing shows \"Reserve met\" once a bid reaches it.",
   "faqProtectionQ": "What is buyer protection?",
-  "faqProtectionA": "Your payment is held by Imagi Auction and only released to the seller after you confirm delivery. If the item does not arrive or is not as described, use \"Report a problem\" on the order.",
+  "faqProtectionA": "Your payment is held by Authentic and only released to the seller after you confirm delivery. If the item does not arrive or is not as described, use \"Report a problem\" on the order.",
   "faqCostQ": "What does it cost?",
   "faqCostA": "Buyers pay the winning price, shipping and a service fee of {service}% (max Rp 10.000). Sellers pay a final value fee of {fee}% of the sale price.",
   "@faqCostA": {
@@ -348,7 +348,7 @@
   "payQris": "QRIS",
   "payQrisDetail": "Scan with any banking or e-wallet app",
   "payEWallet": "E-wallet",
-  "heldNote": "Your money is held by Imagi Auction and only released to the seller after you confirm delivery.",
+  "heldNote": "Your money is held by Authentic and only released to the seller after you confirm delivery.",
   "winningPrice": "Winning price",
   "shipping": "Shipping",
   "serviceFee": "Service fee",
@@ -449,7 +449,7 @@
     }
   },
   "description": "Description",
-  "shareText": "{title} · {price} on Imagi Auction",
+  "shareText": "{title} · {price} on Authentic",
   "@shareText": {
     "placeholders": {
       "title": {

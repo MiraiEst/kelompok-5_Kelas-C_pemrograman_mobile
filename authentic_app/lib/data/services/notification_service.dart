@@ -80,7 +80,7 @@ class NotificationService {
       if (n == null || m.data.containsKey('notificationId')) return;
       show(
         id: m.messageId.hashCode,
-        title: n.title ?? 'Imagi Auction',
+        title: n.title ?? 'Authentic',
         body: n.body ?? '',
         route: _route(m.data),
       );

@@ -1,5 +1,5 @@
 /**
- * Cloud Functions for Imagi Auction (needs the Firebase Blaze plan).
+ * Cloud Functions for Authentic (needs the Firebase Blaze plan).
  *
  * Without Blaze, cron/run.js (GitHub Actions) does the non-payment jobs below
  * and "Delete account" runs in the app. Only deploy these if you switch to
@@ -128,7 +128,7 @@ exports.pushOnNotification = onDocumentCreated(
 
     const res = await getMessaging().sendEachForMulticast({
       tokens,
-      notification: {title: n.title || "Imagi Auction", body: n.body || ""},
+      notification: {title: n.title || "Authentic", body: n.body || ""},
       data: {
         listingId: n.listingId || "",
         orderId: n.orderId || "",
@@ -413,7 +413,7 @@ exports.createInvoice = onCall({secrets: [XENDIT_SECRET_KEY]}, async (req) => {
       amount: total,
       currency: "IDR",
       payer_email: req.auth.token.email,
-      description: `Imagi Auction: ${o.title}`,
+      description: `Authentic: ${o.title}`,
       invoice_duration: seconds,
       payment_methods: XENDIT_CHANNELS[o.paymentMethod] || undefined,
     }),

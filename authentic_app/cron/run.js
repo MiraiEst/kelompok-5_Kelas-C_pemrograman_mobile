@@ -1,5 +1,5 @@
 /**
- * Server jobs for Imagi Auction WITHOUT Cloud Functions (no Blaze plan needed).
+ * Server jobs for Authentic WITHOUT Cloud Functions (no Blaze plan needed).
  *
  * Runs once and exits. GitHub Actions starts it every ~5 minutes
  * (.github/workflows/backend-cron.yml at the repo root). It does the work of
@@ -373,7 +373,7 @@ async function push(since) {
     }
     const res = await getMessaging().sendEachForMulticast({
       tokens,
-      notification: {title: n.title || "Imagi Auction", body: n.body || ""},
+      notification: {title: n.title || "Authentic", body: n.body || ""},
       data: {listingId: n.listingId || "", orderId: n.orderId || "",
         notificationId: doc.id, type: n.type || "other"},
       android: {priority: "high", notification: {channelId: "auction_alerts"}},

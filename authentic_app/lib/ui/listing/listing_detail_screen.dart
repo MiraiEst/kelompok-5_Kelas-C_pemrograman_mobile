@@ -133,7 +133,7 @@ class _GalleryState extends ConsumerState<_Gallery> {
       ShareParams(
         text:
             '${context.l10n.shareText(l.title, l.currentPrice.toRupiah())}\n'
-            'imagiauction://listing/${l.id}',
+            'authentic://listing/${l.id}',
         subject: l.title,
       ),
     );
