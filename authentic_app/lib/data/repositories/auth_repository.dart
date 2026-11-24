@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -141,12 +143,13 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
-    if (!kIsWeb && _googleReady) {
-      try {
-        await GoogleSignIn.instance.signOut();
-      } catch (_) {}
-    }
     await _auth.signOut();
+    // Also forget the Google account so the next Google login shows the
+    // account picker. Done after (and without waiting for) the Firebase
+    // sign-out: on some phones this call never returns.
+    if (!kIsWeb && _googleReady) {
+      unawaited(GoogleSignIn.instance.signOut().catchError((_) {}));
+    }
   }
 }
 

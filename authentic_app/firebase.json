@@ -22,5 +22,25 @@
       "enabled": false
     },
     "singleProjectMode": true
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "imagi-auction-k5c",
+          "appId": "1:526772532249:android:8ccd52612693a324476688",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "imagi-auction-k5c",
+          "configurations": {
+            "android": "1:526772532249:android:8ccd52612693a324476688",
+            "web": "1:526772532249:web:58966146f361144e476688"
+          }
+        }
+      }
+    }
   }
 }
