@@ -109,8 +109,8 @@ class _RankRow extends ConsumerWidget {
     return Semantics(
       button: true,
       label:
-          'Rank $rank, ${l.title}, ${l.currentPrice.toRupiah()}, ${l.bidCount} bids'
-          '${recent > 0 ? ', $recent bids in the last hour' : ''}',
+          context.l10n.trendingSemantics(rank, l.title, l.currentPrice.toRupiah(), l.bidCount) +
+          (recent > 0 ? context.l10n.recentBidsSemantics(recent) : ''),
       excludeSemantics: true,
       child: InkWell(
         onTap: () => context.push('/listing/${l.id}'),
@@ -155,8 +155,8 @@ class _RankRow extends ConsumerWidget {
                     const SizedBox(height: 2),
                     CountdownText(
                       endsAt: l.endsAt,
-                      prefix: '${l.bidCount} bids · ${l.watcherCount} watching · ',
-                      suffix: ' left',
+                      prefix: context.l10n.bidsWatchingPrefix(l.bidCount, l.watcherCount),
+                      suffix: context.l10n.timeLeftSuffix,
                       format: (d) => d.toShort(),
                       style: AppText.caption,
                       onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),

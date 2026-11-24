@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config.dart';
 import '../../core/extensions.dart';
@@ -11,6 +10,8 @@ import '../../domain/models/app_user.dart';
 import '../../domain/models/listing.dart';
 import '../../domain/models/order.dart';
 import '../../domain/models/payout_account.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/labels.dart';
 import '../../providers/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_text_field.dart';
@@ -40,7 +41,7 @@ class _MyListingsScreenState extends ConsumerState<MyListingsScreen> {
     if (user == null) return;
     try {
       await ref.read(listingRepositoryProvider).endEarly(l, user);
-      if (mounted) showSnack(context, 'Listing ended.');
+      if (mounted) showSnack(context, context.l10n.listingEndedSnack);
     } catch (e) {
       if (mounted) showSnack(context, friendlyError(e));
     }
@@ -54,7 +55,7 @@ class _MyListingsScreenState extends ConsumerState<MyListingsScreen> {
           .read(listingRepositoryProvider)
           .relist(l, user, AuctionDuration.sevenDays);
       if (mounted) {
-        showSnack(context, 'Relisted for 7 days.');
+        showSnack(context, context.l10n.relistedSnack);
         context.push('/listing/$id');
       }
     } catch (e) {
@@ -66,7 +67,7 @@ class _MyListingsScreenState extends ConsumerState<MyListingsScreen> {
   Widget build(BuildContext context) {
     final mine = ref.watch(myListingsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('My listings')),
+      appBar: AppBar(title: Text(context.l10n.myListings)),
       body: Column(
         children: [
           SizedBox(
@@ -80,7 +81,7 @@ class _MyListingsScreenState extends ConsumerState<MyListingsScreen> {
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
                       label: Text(
-                        '${s.value[0].toUpperCase()}${s.value.substring(1)} '
+                        '${s.text(context)} '
                         '(${mine.value?.where((l) => l.status == s).length ?? 0})',
                       ),
                       selected: _filter == s,
@@ -95,7 +96,7 @@ class _MyListingsScreenState extends ConsumerState<MyListingsScreen> {
               AsyncValue(:final value?) => () {
                 final items = value.where((l) => l.status == _filter).toList();
                 if (items.isEmpty) {
-                  return const EmptyState(icon: Icons.sell_outlined, text: 'No listings here.');
+                  return EmptyState(icon: Icons.sell_outlined, text: context.l10n.noListingsHere);
                 }
                 return ListView.separated(
                   padding: const EdgeInsets.all(16),
@@ -109,9 +110,15 @@ class _MyListingsScreenState extends ConsumerState<MyListingsScreen> {
                     return _ListingRow(
                       listing: l,
                       action: canEnd
-                          ? TextButton(onPressed: () => _end(l), child: const Text('End'))
+                          ? TextButton(
+                              onPressed: () => _end(l),
+                              child: Text(context.l10n.endListing),
+                            )
                           : canRelist
-                          ? TextButton(onPressed: () => _relist(l), child: const Text('Relist'))
+                          ? TextButton(
+                              onPressed: () => _relist(l),
+                              child: Text(context.l10n.relist),
+                            )
                           : null,
                     );
                   },
@@ -161,7 +168,10 @@ class _ListingRow extends StatelessWidget {
                 children: [
                   Text(l.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.small),
                   Text((l.finalPrice ?? l.currentPrice).toRupiah(), style: AppText.price),
-                  Text('${l.bidCount} bids · ${l.watcherCount} watching', style: AppText.caption),
+                  Text(
+                    context.l10n.bidsWatching(l.bidCount, l.watcherCount),
+                    style: AppText.caption,
+                  ),
                 ],
               ),
             ),
@@ -185,14 +195,16 @@ class OrdersListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final orders = ref.watch(toShip ? mySalesProvider : myPurchasesProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(toShip ? 'Orders to ship' : 'Purchases & orders')),
+      appBar: AppBar(
+        title: Text(toShip ? context.l10n.ordersToShip : context.l10n.purchasesAndOrders),
+      ),
       body: switch (orders) {
         AsyncValue(:final value?) => () {
           final items = toShip ? value.where((o) => o.status == OrderStatus.paid).toList() : value;
           if (items.isEmpty) {
             return EmptyState(
               icon: Icons.local_shipping_outlined,
-              text: toShip ? 'Nothing to ship right now.' : 'Items you buy will appear here.',
+              text: toShip ? context.l10n.nothingToShip : context.l10n.purchasesEmpty,
             );
           }
           return ListView.separated(
@@ -245,7 +257,7 @@ class _OrderRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  StatusPill(o.status.label, variant: variant),
+                  StatusPill(o.status.text(context), variant: variant),
                   const SizedBox(height: 4),
                   Text(o.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.small),
                   Text('#${o.shortNumber} · ${o.total.toRupiah()}', style: AppText.caption),
@@ -304,7 +316,7 @@ class _PayoutScreenState extends ConsumerState<PayoutScreen> {
           );
       if (!mounted) return;
       setState(() => _editing = false);
-      showSnack(context, 'Payout account saved.');
+      showSnack(context, context.l10n.payoutSaved);
     } catch (e) {
       if (mounted) showSnack(context, friendlyError(e));
     } finally {
@@ -319,16 +331,13 @@ class _PayoutScreenState extends ConsumerState<PayoutScreen> {
     final showForm = _editing || (current.hasValue && saved == null);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Payout account')),
+      appBar: AppBar(title: Text(context.l10n.payoutAccount)),
       body: current.isLoading && !current.hasValue
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const Text(
-                  "Sale proceeds are paid to this account after the buyer confirms delivery.",
-                  style: AppText.meta,
-                ),
+                Text(context.l10n.payoutIntro, style: AppText.meta),
                 const SizedBox(height: 16),
                 if (!showForm && saved != null) ...[
                   Container(
@@ -347,7 +356,7 @@ class _PayoutScreenState extends ConsumerState<PayoutScreen> {
                   ),
                   const SizedBox(height: 16),
                   SecondaryButton(
-                    label: 'Change account',
+                    label: context.l10n.changeAccount,
                     onPressed: () => setState(() {
                       _editing = true;
                       _bank = saved.bankName;
@@ -361,37 +370,38 @@ class _PayoutScreenState extends ConsumerState<PayoutScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text('Bank', style: AppText.fieldLabel),
+                        Text(context.l10n.bank, style: AppText.fieldLabel),
                         const SizedBox(height: 6),
                         DropdownButtonFormField<String>(
                           initialValue: _bank,
-                          hint: const Text('Choose your bank'),
+                          hint: Text(context.l10n.chooseYourBank),
                           items: [
                             for (final b in PayoutAccount.banks)
                               DropdownMenuItem(value: b, child: Text(b)),
                           ],
                           onChanged: (v) => setState(() => _bank = v),
-                          validator: (v) => v == null ? 'Choose a bank' : null,
+                          validator: (v) => v == null ? context.l10n.chooseABank : null,
                         ),
                         const SizedBox(height: 16),
                         AppTextField(
-                          label: 'Account number',
+                          label: context.l10n.accountNumber,
                           controller: _number,
                           keyboardType: TextInputType.number,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          validator: (v) =>
-                              (v == null || v.length < 8) ? 'Enter a valid account number' : null,
+                          validator: (v) => (v == null || v.length < 8)
+                              ? context.l10n.enterValidAccountNumber
+                              : null,
                         ),
                         const SizedBox(height: 16),
                         AppTextField(
-                          label: 'Account holder name',
+                          label: context.l10n.accountHolderName,
                           controller: _holder,
                           validator: (v) => (v == null || v.trim().length < 3)
-                              ? 'Enter the name on the account'
+                              ? context.l10n.enterAccountName
                               : null,
                         ),
                         const SizedBox(height: 24),
-                        PrimaryButton(label: 'Save', loading: _busy, onPressed: _save),
+                        PrimaryButton(label: context.l10n.save, loading: _busy, onPressed: _save),
                       ],
                     ),
                   ),
@@ -421,22 +431,19 @@ class NotificationSettingsScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Notification settings')),
+      appBar: AppBar(title: Text(context.l10n.notificationSettings)),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+          // Push only: the app has no email sending, so there are no email switches.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Row(
               children: [
-                Expanded(child: SizedBox()),
+                const Expanded(child: SizedBox()),
                 SizedBox(
                   width: 64,
-                  child: Center(child: Text('Push', style: AppText.groupLabel)),
-                ),
-                SizedBox(
-                  width: 64,
-                  child: Center(child: Text('Email', style: AppText.groupLabel)),
+                  child: Center(child: Text(context.l10n.push, style: AppText.groupLabel)),
                 ),
               ],
             ),
@@ -450,7 +457,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Expanded(child: Text(p.label)),
+                  Expanded(child: Text(p.text(context))),
                   SizedBox(
                     width: 64,
                     child: Switch(
@@ -458,23 +465,12 @@ class NotificationSettingsScreen extends ConsumerWidget {
                       onChanged: (v) => set(p, (push: v, email: prefOf(user, p).email)),
                     ),
                   ),
-                  SizedBox(
-                    width: 64,
-                    child: Switch(
-                      value: prefOf(user, p).email,
-                      onChanged: (v) => set(p, (push: prefOf(user, p).push, email: v)),
-                    ),
-                  ),
                 ],
               ),
             ),
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'In-app notifications always appear in the Notifications list. '
-              'These switches control pushes to your phone and emails.',
-              style: AppText.caption,
-            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(context.l10n.notifSettingsNote, style: AppText.caption),
           ),
         ],
       ),
@@ -489,57 +485,42 @@ class NotificationSettingsScreen extends ConsumerWidget {
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
 
-  static const _faq = [
-    (
-      'How does proxy bidding work?',
-      'Enter the most you are willing to pay. We bid for you only as much as needed to keep you in '
-          'the lead, up to that maximum. Nobody else ever sees your maximum.',
-    ),
-    (
-      'What is a reserve price?',
-      'A hidden minimum set by the seller. If bidding ends below it, the item does not sell. '
-          'The listing shows "Reserve met" once a bid reaches it.',
-    ),
-    (
-      'What is buyer protection?',
-      'Your payment is held by Imagi Auction and only released to the seller after you confirm '
-          'delivery. If the item does not arrive or is not as described, use "Report a problem" on the order.',
-    ),
-    (
-      'What does it cost?',
-      'Buyers pay the winning price, shipping and a service fee of ${AppConfig.serviceFeePercent}% '
-          '(max Rp 10.000). Sellers pay a final value fee of ${AppConfig.finalValueFeePercent}% of the sale price.',
-    ),
-  ];
-
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Help, terms & privacy')),
-    body: ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      children: [
-        for (final (q, a) in _faq)
-          ExpansionTile(
-            title: Text(q, style: const TextStyle(fontWeight: FontWeight.w600)),
-            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            expandedAlignment: Alignment.topLeft,
-            children: [Text(a, style: AppText.body)],
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final faq = [
+      (l.faqProxyQ, l.faqProxyA),
+      (l.faqReserveQ, l.faqReserveA),
+      (l.faqProtectionQ, l.faqProtectionA),
+      (l.faqCostQ, l.faqCostA(AppConfig.serviceFeePercent, AppConfig.finalValueFeePercent)),
+    ];
+    return Scaffold(
+      appBar: AppBar(title: Text(l.helpTermsPrivacy)),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        children: [
+          for (final (q, a) in faq)
+            ExpansionTile(
+              title: Text(q, style: const TextStyle(fontWeight: FontWeight.w600)),
+              childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              expandedAlignment: Alignment.topLeft,
+              children: [Text(a, style: AppText.body)],
+            ),
+          const SizedBox(height: 16),
+          ListTile(
+            title: Text(l.termsOfService),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/legal/terms'),
           ),
-        const SizedBox(height: 16),
-        ListTile(
-          title: const Text('Terms of Service'),
-          trailing: const Icon(Icons.open_in_new),
-          onTap: () => launchUrl(Uri.parse(AppConfig.termsUrl), mode: LaunchMode.inAppBrowserView),
-        ),
-        ListTile(
-          title: const Text('Privacy Policy'),
-          trailing: const Icon(Icons.open_in_new),
-          onTap: () =>
-              launchUrl(Uri.parse(AppConfig.privacyUrl), mode: LaunchMode.inAppBrowserView),
-        ),
-      ],
-    ),
-  );
+          ListTile(
+            title: Text(l.privacyPolicy),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/legal/privacy'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ============================================================================
@@ -609,7 +590,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     final u = _user;
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit profile')),
+      appBar: AppBar(title: Text(context.l10n.editProfile)),
       body: Form(
         key: _form,
         child: ListView(
@@ -618,7 +599,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             Center(
               child: Semantics(
                 button: true,
-                label: 'Change profile photo',
+                label: context.l10n.changeProfilePhoto,
                 child: InkWell(
                   customBorder: const CircleBorder(),
                   onTap: _pickPhoto,
@@ -629,18 +610,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
             ),
             Center(
-              child: TextButton(onPressed: _pickPhoto, child: const Text('Change photo')),
+              child: TextButton(onPressed: _pickPhoto, child: Text(context.l10n.changePhoto)),
             ),
             const SizedBox(height: 16),
             AppTextField(
-              label: 'Username',
+              label: context.l10n.username,
               controller: _name,
-              helper: 'Shown masked when you bid',
-              validator: (v) => (v == null || v.trim().length < 3) ? 'At least 3 characters' : null,
+              helper: context.l10n.shownMasked,
+              validator: (v) => (v == null || v.trim().length < 3) ? context.l10n.atLeast3 : null,
             ),
             const SizedBox(height: 16),
             AppTextField(
-              label: 'Phone number',
+              label: context.l10n.phoneNumber,
               controller: _phone,
               keyboardType: TextInputType.phone,
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9 ]'))],
@@ -649,15 +630,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       v.isEmpty ||
                       RegExp(r'^08\d{8,11}$').hasMatch(v.replaceAll(' ', '')))
                   ? null
-                  : 'Use an Indonesian number starting with 08',
+                  : context.l10n.phoneInvalid,
             ),
             const SizedBox(height: 16),
-            const Text('Email', style: AppText.fieldLabel),
+            Text(context.l10n.email, style: AppText.fieldLabel),
             const SizedBox(height: 6),
             Text(u?.email ?? '', style: AppText.meta),
-            const Text("Email can't be changed here.", style: AppText.caption),
+            Text(context.l10n.emailCantChange, style: AppText.caption),
             const SizedBox(height: 24),
-            PrimaryButton(label: 'Save', loading: _busy, onPressed: _save),
+            PrimaryButton(label: context.l10n.save, loading: _busy, onPressed: _save),
           ],
         ),
       ),

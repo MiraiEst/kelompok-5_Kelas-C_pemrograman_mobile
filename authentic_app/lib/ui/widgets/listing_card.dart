@@ -6,6 +6,7 @@ import '../../core/extensions.dart';
 import '../../domain/models/listing.dart';
 import '../../providers/providers.dart';
 import 'common.dart';
+import '../../l10n/l10n.dart';
 
 class ListingCard extends ConsumerWidget {
   const ListingCard({super.key, required this.listing, this.trailing});
@@ -47,7 +48,7 @@ class ListingCard extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        Text('${l.bidCount} bids · ', style: text.bodySmall),
+                        Text(context.l10n.nBidsPrefix(l.bidCount), style: text.bodySmall),
                         if (l.isActive)
                           CountdownText(
                             endsAt: l.endsAt,
@@ -59,7 +60,10 @@ class ListingCard extends ConsumerWidget {
                       ],
                     ),
                     if (l.canBuyNow(DateTime.now()))
-                      Text('Buy It Now ${l.buyNowPrice!.toRupiah()}', style: text.bodySmall),
+                      Text(
+                        context.l10n.buyItNowSpace(l.buyNowPrice!.toRupiah()),
+                        style: text.bodySmall,
+                      ),
                   ],
                 ),
               ),

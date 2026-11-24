@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../domain/models/order.dart';
+import '../../l10n/l10n.dart';
 import '../../providers/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_text_field.dart';
@@ -43,7 +44,10 @@ class AddressCard extends StatelessWidget {
                     Flexible(
                       child: Text(a.name, style: const TextStyle(fontWeight: FontWeight.w700)),
                     ),
-                    if (a.isDefault) ...[const SizedBox(width: 8), const StatusPill('Default')],
+                    if (a.isDefault) ...[
+                      const SizedBox(width: 8),
+                      StatusPill(context.l10n.defaultLabel),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -83,10 +87,16 @@ class AddressesScreen extends ConsumerWidget {
           final ok = await showDialog<bool>(
             context: context,
             builder: (ctx) => AlertDialog(
-              title: const Text('Delete this address?'),
+              title: Text(context.l10n.deleteAddressQ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(context.l10n.cancel),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(context.l10n.delete),
+                ),
               ],
             ),
           );
@@ -95,13 +105,13 @@ class AddressesScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(selectMode ? 'Choose address' : 'Addresses')),
+      appBar: AppBar(title: Text(selectMode ? context.l10n.chooseAddress : context.l10n.addresses)),
       body: switch (addresses) {
         AsyncValue(:final value?) when value.isEmpty => EmptyState(
           icon: Icons.location_on_outlined,
-          text: 'No saved addresses yet.',
+          text: context.l10n.noAddresses,
           action: PrimaryButton(
-            label: 'Add address',
+            label: context.l10n.addAddress,
             expand: false,
             onPressed: () => context.push('/addresses/edit'),
           ),
@@ -122,13 +132,13 @@ class AddressesScreen extends ConsumerWidget {
                     child: AddressCard(
                       address: a,
                       trailing: PopupMenuButton<String>(
-                        tooltip: 'Address options',
+                        tooltip: context.l10n.addressOptions,
                         onSelected: (v) => menu(a, v),
                         itemBuilder: (_) => [
-                          const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                          PopupMenuItem(value: 'edit', child: Text(context.l10n.edit)),
                           if (!a.isDefault)
-                            const PopupMenuItem(value: 'default', child: Text('Set as default')),
-                          const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                            PopupMenuItem(value: 'default', child: Text(context.l10n.setAsDefault)),
+                          PopupMenuItem(value: 'delete', child: Text(context.l10n.delete)),
                         ],
                       ),
                     ),
@@ -137,7 +147,7 @@ class AddressesScreen extends ConsumerWidget {
               ),
             const SizedBox(height: 8),
             SecondaryButton(
-              label: 'Add address',
+              label: context.l10n.addAddress,
               icon: Icons.add,
               onPressed: () => context.push('/addresses/edit'),
             ),
@@ -181,7 +191,7 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
     super.dispose();
   }
 
-  String? _required(String? v) => (v == null || v.trim().isEmpty) ? 'Required' : null;
+  String? _required(String? v) => (v == null || v.trim().isEmpty) ? context.l10n.required : null;
 
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
@@ -216,29 +226,35 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.address == null ? 'Add address' : 'Edit address')),
+      appBar: AppBar(
+        title: Text(widget.address == null ? context.l10n.addAddress : context.l10n.editAddress),
+      ),
       body: Form(
         key: _form,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            AppTextField(label: 'Recipient name', controller: _name, validator: _required),
+            AppTextField(
+              label: context.l10n.recipientName,
+              controller: _name,
+              validator: _required,
+            ),
             const SizedBox(height: 16),
             AppTextField(
-              label: 'Phone number',
+              label: context.l10n.phoneNumber,
               controller: _phone,
               hint: '08xx xxxx xxxx',
               keyboardType: TextInputType.phone,
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9 ]'))],
               validator: (v) => RegExp(r'^08\d{8,11}$').hasMatch((v ?? '').replaceAll(' ', ''))
                   ? null
-                  : 'Use an Indonesian number starting with 08',
+                  : context.l10n.phoneInvalid,
             ),
             const SizedBox(height: 16),
             AppTextField(
-              label: 'Street address',
+              label: context.l10n.streetAddress,
               controller: _street,
-              hint: 'Street, number, RT/RW, district',
+              hint: context.l10n.streetHint,
               maxLines: 2,
               validator: _required,
             ),
@@ -247,12 +263,16 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: AppTextField(label: 'City', controller: _city, validator: _required),
+                  child: AppTextField(
+                    label: context.l10n.city,
+                    controller: _city,
+                    validator: _required,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: AppTextField(
-                    label: 'Province',
+                    label: context.l10n.province,
                     controller: _province,
                     validator: _required,
                   ),
@@ -261,21 +281,22 @@ class _AddressFormScreenState extends ConsumerState<AddressFormScreen> {
             ),
             const SizedBox(height: 16),
             AppTextField(
-              label: 'Postal code',
+              label: context.l10n.postalCode,
               controller: _postal,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              validator: (v) => RegExp(r'^\d{5}$').hasMatch(v ?? '') ? null : 'Enter 5 digits',
+              validator: (v) =>
+                  RegExp(r'^\d{5}$').hasMatch(v ?? '') ? null : context.l10n.enter5Digits,
             ),
             const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Use as default address'),
+              title: Text(context.l10n.useAsDefaultAddress),
               value: _default,
               onChanged: (v) => setState(() => _default = v),
             ),
             const SizedBox(height: 16),
-            PrimaryButton(label: 'Save address', loading: _busy, onPressed: _save),
+            PrimaryButton(label: context.l10n.saveAddress, loading: _busy, onPressed: _save),
           ],
         ),
       ),

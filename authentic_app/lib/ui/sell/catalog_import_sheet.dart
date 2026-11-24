@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/providers.dart';
 import '../widgets/common.dart';
 
@@ -43,9 +44,9 @@ class _CatalogImportSheetState extends ConsumerState<CatalogImportSheet> {
               padding: const EdgeInsets.all(16),
               child: TextField(
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search products, e.g. "watch", "laptop"',
-                  prefixIcon: Icon(Icons.search),
+                decoration: InputDecoration(
+                  hintText: context.l10n.searchProductsHint,
+                  prefixIcon: const Icon(Icons.search),
                 ),
                 onChanged: _onChanged,
               ),
@@ -55,7 +56,7 @@ class _CatalogImportSheetState extends ConsumerState<CatalogImportSheet> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => ErrorText(e),
                 data: (items) => items.isEmpty
-                    ? const EmptyState(icon: Icons.search_off, text: 'No products found.')
+                    ? EmptyState(icon: Icons.search_off, text: context.l10n.noProductsFound)
                     : ListView.builder(
                         itemCount: items.length,
                         itemBuilder: (_, i) {

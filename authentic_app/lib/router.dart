@@ -17,6 +17,7 @@ import 'ui/bids/your_bids_screen.dart';
 import 'ui/checkout/checkout_screen.dart';
 import 'ui/home/home_screen.dart';
 import 'ui/home/home_shell.dart';
+import 'ui/legal/legal_screen.dart';
 import 'ui/listing/listing_detail_screen.dart';
 import 'ui/notifications/notifications_screen.dart';
 import 'ui/orders/order_screen.dart';
@@ -47,6 +48,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final user = auth.value;
       final loc = state.matchedLocation;
       final onAuthPage = loc == '/login' || loc == '/register';
+      // Terms / privacy can be read before signing in (linked from register).
+      if (loc.startsWith('/legal/')) return null;
 
       if (user == null) return onAuthPage ? null : '/login';
       // Email/password accounts must verify their email first.
@@ -106,6 +109,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
       GoRoute(path: '/verify-email', builder: (_, _) => const VerifyEmailScreen()),
+      GoRoute(
+        path: '/legal/:doc',
+        builder: (_, state) => LegalScreen(doc: LegalDoc.parse(state.pathParameters['doc'])),
+      ),
       GoRoute(path: '/sell', builder: (_, _) => const SellScreen()),
       GoRoute(path: '/admin', builder: (_, _) => const AdminScreen()),
       GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),

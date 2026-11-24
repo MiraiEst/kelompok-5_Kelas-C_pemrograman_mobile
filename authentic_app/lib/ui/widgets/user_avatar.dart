@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../../l10n/l10n.dart';
 
 /// Circle with the user's photo, or the first letter of their name.
 class UserAvatar extends StatelessWidget {
@@ -15,7 +16,7 @@ class UserAvatar extends StatelessWidget {
     final initial = name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase();
     final url = photoUrl;
     return Semantics(
-      label: 'Avatar of $name',
+      label: context.l10n.avatarOf(name),
       image: true,
       child: CircleAvatar(
         radius: size / 2,

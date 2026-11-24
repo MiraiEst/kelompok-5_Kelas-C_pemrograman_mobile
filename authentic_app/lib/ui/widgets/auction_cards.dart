@@ -72,7 +72,7 @@ class AuctionGridCard extends ConsumerWidget {
     final price = l.isBuyNowOnly ? l.buyNowPrice ?? l.currentPrice : l.currentPrice;
     return Semantics(
       button: true,
-      label: '${l.title}, ${price.toRupiah()}, ${l.bidCount} bids',
+      label: context.l10n.auctionCardSemantics(l.title, price.toRupiah(), l.bidCount),
       excludeSemantics: true,
       child: InkWell(
         onTap: () => context.push('/listing/${l.id}'),
@@ -93,7 +93,9 @@ class AuctionGridCard extends ConsumerWidget {
             const SizedBox(height: 2),
             CountdownText(
               endsAt: l.endsAt,
-              prefix: showBuyNow ? 'Buy It Now · ' : '${l.bidCount} bids · ',
+              prefix: showBuyNow
+                  ? context.l10n.buyItNowPrefix
+                  : context.l10n.nBidsPrefix(l.bidCount),
               format: (d) => d.toShort(),
               style: AppText.caption,
               onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),

@@ -8,6 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../../domain/models/app_notification.dart';
 import '../../domain/models/listing.dart';
 import '../../firebase_options.dart';
+import '../../l10n/l10n.dart';
 
 /// Background/terminated FCM messages. With a `notification` payload the OS
 /// shows them automatically; this handler just has to exist and be top-level.
@@ -129,13 +130,14 @@ class NotificationService {
     final now = DateTime.now();
     final wanted = <int, ({DateTime at, String title, String body, String route})>{};
     for (final l in listings) {
-      for (final (minutes, label) in [(60, '1 hour left'), (10, '10 minutes left')]) {
+      final l10n = currentL10n;
+      for (final (minutes, label) in [(60, l10n.reminder1h), (10, l10n.reminder10m)]) {
         final at = l.endsAt.subtract(Duration(minutes: minutes));
         if (!at.isAfter(now)) continue;
         wanted[_reminderId(l.id, minutes)] = (
           at: at,
           title: label,
-          body: '"${l.title}" ends soon. Check the price and place your final bid.',
+          body: l10n.reminderBody(l.title),
           route: '/listing/${l.id}',
         );
       }

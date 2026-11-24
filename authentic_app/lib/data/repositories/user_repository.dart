@@ -6,6 +6,7 @@ import '../../domain/models/listing.dart';
 import '../../domain/models/order.dart';
 import '../../domain/models/payout_account.dart';
 import '../../domain/models/public_profile.dart';
+import '../../l10n/l10n.dart';
 
 class UserRepository {
   UserRepository(this._db);
@@ -170,9 +171,7 @@ class UserRepository {
         .where('status', isEqualTo: 'active')
         .get();
     if (live.docs.any((d) => ((d.data()['bidCount'] as num?) ?? 0) > 0)) {
-      throw const AccountDeletionBlocked(
-        'You have live auctions with bids. Wait until they end.',
-      );
+      throw AccountDeletionBlocked(currentL10n.liveAuctionsBlockDelete);
     }
     for (final d in live.docs) {
       await d.reference.update({

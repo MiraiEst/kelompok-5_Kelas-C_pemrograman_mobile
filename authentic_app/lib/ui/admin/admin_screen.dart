@@ -5,6 +5,7 @@ import '../../domain/models/listing.dart';
 import '../../providers/providers.dart';
 import '../widgets/common.dart';
 import '../widgets/listing_card.dart';
+import '../../l10n/l10n.dart';
 
 /// Admin-only moderation screen.
 /// Guarded three times: hidden in the UI, blocked by the router redirect,
@@ -16,19 +17,19 @@ class AdminScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isAdmin = ref.watch(isAdminProvider);
     if (!isAdmin) {
-      return const Scaffold(
-        body: EmptyState(icon: Icons.lock, text: 'Admins only.'),
+      return Scaffold(
+        body: EmptyState(icon: Icons.lock, text: context.l10n.adminsOnlyMsg),
       );
     }
     final all = ref.watch(allListingsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Admin · All listings')),
+      appBar: AppBar(title: Text(context.l10n.adminAllListings)),
       body: all.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorText(e),
         data: (items) => items.isEmpty
-            ? const EmptyState(icon: Icons.inbox_outlined, text: 'No listings.')
+            ? EmptyState(icon: Icons.inbox_outlined, text: context.l10n.noListings)
             : ListView.builder(
                 padding: const EdgeInsets.all(8),
                 itemCount: items.length,
@@ -62,15 +63,15 @@ class _AdminMenu extends ConsumerWidget {
             case _AdminAction.delete:
               await repo.delete(listing.id);
           }
-          if (context.mounted) showSnack(context, 'Done.');
+          if (context.mounted) showSnack(context, context.l10n.done);
         } catch (e) {
-          if (context.mounted) showSnack(context, '$e');
+          if (context.mounted) showSnack(context, friendlyError(e));
         }
       },
       itemBuilder: (_) => [
         if (listing.isActive)
-          const PopupMenuItem(value: _AdminAction.end, child: Text('End listing now')),
-        const PopupMenuItem(value: _AdminAction.delete, child: Text('Delete listing')),
+          PopupMenuItem(value: _AdminAction.end, child: Text(context.l10n.endListingNow)),
+        PopupMenuItem(value: _AdminAction.delete, child: Text(context.l10n.deleteListing)),
       ],
     );
   }
