@@ -139,6 +139,10 @@ final reminderListingsProvider = StreamProvider<List<Listing>>((ref) {
 });
 
 final endingSoonRemindersProvider = Provider<List<Listing>?>((ref) {
+  // "Ending soon" push switched off in Notification settings: no reminders
+  // (an empty list also cancels the ones already scheduled).
+  final user = ref.watch(currentUserProvider).value;
+  if (user != null && !user.prefFor(NotificationPref.endingSoon).push) return const [];
   final bidOn = ref.watch(myBidsProvider).value;
   final watched = ref.watch(reminderListingsProvider).value;
   if (bidOn == null || watched == null) return null;

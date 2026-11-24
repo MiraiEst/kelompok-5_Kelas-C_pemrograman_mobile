@@ -253,6 +253,12 @@ class _EndingSoon extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // While searching or filtering, only the filtered grid below is shown,
+    // so results aren't mixed up with unrelated "ending soon" auctions.
+    final filtering = ref.watch(
+      homeFilterProvider.select((f) => f.query.trim().isNotEmpty || f.category != null),
+    );
+    if (filtering) return const SizedBox.shrink();
     final items = ref.watch(endingSoonProvider);
     final scale = MediaQuery.textScalerOf(context).scale(1);
     return Column(

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "526772532249",
+    "project_id": "imagi-auction-k5c",
+    "storage_bucket": "imagi-auction-k5c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:526772532249:android:8ccd52612693a324476688",
+        "android_client_info": {
+          "package_name": "com.imagilabs.imagi_auction"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "526772532249-d6h5b61f5a44om4eofv08eb7lg0btc23.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.imagilabs.imagi_auction",
+            "certificate_hash": "2e005f8bf22fb716f629d5eb4501802fee680222"
+          }
+        },
+        {
+          "client_id": "526772532249-fltas72sg8qqmti2nhk4g457iaqt8nqc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2B7Sp6L1RFeQN6Dh8sju7R0uBXozAnIY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "526772532249-fltas72sg8qqmti2nhk4g457iaqt8nqc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

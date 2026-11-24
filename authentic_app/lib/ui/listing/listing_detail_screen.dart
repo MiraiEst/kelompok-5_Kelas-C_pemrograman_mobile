@@ -276,6 +276,7 @@ class _SellerRow extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  const SizedBox(width: double.infinity), // full-width sheet
                   UserAvatar(name: listing.sellerName, size: 64),
                   const SizedBox(height: 12),
                   Text('$name (seller)', style: AppText.sectionTitle),

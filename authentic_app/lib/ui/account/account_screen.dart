@@ -21,14 +21,26 @@ import '../widgets/user_avatar.dart';
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
 
-  Future<void> _signOut(WidgetRef ref, String uid) async {
+  Future<void> _signOut(BuildContext context, WidgetRef ref, String uid) async {
     final service = ref.read(notificationServiceProvider);
+    final users = ref.read(userRepositoryProvider);
+    final auth = ref.read(authRepositoryProvider);
     try {
-      // Stop pushes to this device for this account.
-      final token = await service.getToken();
-      if (token != null) await ref.read(userRepositoryProvider).removeFcmToken(uid, token);
+      // Stop pushes to this device for this account. Never let a slow token
+      // fetch or a write that is waiting for the network block signing out.
+      final token = await service.getToken().timeout(const Duration(seconds: 4));
+      if (token != null) {
+        await users.removeFcmToken(uid, token).timeout(const Duration(seconds: 4));
+      }
     } catch (_) {}
-    await ref.read(authRepositoryProvider).signOut();
+    try {
+      await auth.signOut();
+    } catch (e) {
+      if (context.mounted) showSnack(context, 'Could not sign out: $e');
+      return;
+    }
+    // The router also redirects on the auth change; go there directly too.
+    if (context.mounted) context.go('/login');
   }
 
   Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
@@ -275,7 +287,7 @@ class AccountScreen extends ConsumerWidget {
             label: context.l10n.signOut,
             bold: true,
             chevron: false,
-            onTap: () => _signOut(ref, user.uid),
+            onTap: () => _signOut(context, ref, user.uid),
           ),
         ],
       ),
