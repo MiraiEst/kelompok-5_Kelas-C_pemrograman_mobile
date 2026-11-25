@@ -62,9 +62,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+
+
     expect(find.text('Won for Rp 505.000'), findsOneWidget);
     expect(find.text('JNE REG'), findsOneWidget);
-    expect(find.text('Andi'), findsOneWidget); // default address preselected
+    expect(find.text('Andi'), findsOneWidget); 
     expect(find.text('Winning price'), findsOneWidget);
     expect(find.text('Service fee'), findsOneWidget);
     final total = tester.widget<Text>(find.byKey(const Key('checkoutTotal')));
