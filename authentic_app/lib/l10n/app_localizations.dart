@@ -423,6 +423,12 @@ abstract class AppLocalizations {
   /// **'Ending soon'**
   String get endingSoon;
 
+  /// No description provided for @hotDeals.
+  ///
+  /// In en, this message translates to:
+  /// **'Hot deals'**
+  String get hotDeals;
+
   /// No description provided for @allAuctions.
   ///
   /// In en, this message translates to:

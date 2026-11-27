@@ -181,6 +181,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get endingSoon => 'Segera berakhir';
 
   @override
+  String get hotDeals => 'Penawaran panas';
+
+  @override
   String get allAuctions => 'Semua lelang';
 
   @override

@@ -31,13 +31,14 @@ void main() {
     await pumpApp(tester, const HomeScreen(), overrides: overrides());
     await tester.pump();
 
-    expect(find.text('Authentic'), findsOneWidget);
+    expect(find.bySemanticsLabel('Authentic'), findsOneWidget);
     expect(find.text('Search auctions'), findsOneWidget);
-    expect(find.text('Ending soon'), findsOneWidget);
+    expect(find.text('Hot deals'), findsOneWidget);
     expect(find.text('All auctions'), findsOneWidget);
     expect(find.byType(AuctionGridCard), findsNWidgets(2));
     expect(find.byType(EndingSoonCard), findsNWidgets(2));
-    expect(find.text('Mechanical keyboard'), findsOneWidget);
+    // Shown in both "Hot deals" and the grid.
+    expect(find.text('Mechanical keyboard'), findsNWidgets(2));
     expect(find.text('Sell'), findsOneWidget);
     expect(find.byTooltip('Notifications, 3 unread'), findsOneWidget);
   });

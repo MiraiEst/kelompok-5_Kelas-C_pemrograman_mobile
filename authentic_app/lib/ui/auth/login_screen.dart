@@ -79,7 +79,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: AutofillGroup(
           child: AuthBody(
             children: [
-              const Center(child: LogoPlaceholder()),
+              const Center(child: AppLogo()),
               const SizedBox(height: 24),
               AuthHeading(title: context.l10n.welcomeBack, subtitle: context.l10n.signInSubtitle),
               const SizedBox(height: 32),

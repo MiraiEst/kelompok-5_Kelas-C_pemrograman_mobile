@@ -46,8 +46,27 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    - assets/brand/logo_mark.png
+    - assets/brand/logo_wordmark.png
+
+# App icon from the brand mark. Regenerate after changing the source images:
+#   dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/brand/launcher_icon.png
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/brand/launcher_foreground.png
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: assets/brand/launcher_icon.png
+    background_color: "#FFFFFF"
+    theme_color: "#FFFFFF"
 

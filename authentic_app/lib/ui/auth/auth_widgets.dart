@@ -4,20 +4,16 @@ import '../../l10n/l10n.dart';
 
 import '../theme/app_theme.dart';
 
-/// 72x72 logo placeholder (radius 18) until the brand logo is ready.
-class LogoPlaceholder extends StatelessWidget {
-  const LogoPlaceholder({super.key});
+/// The Authentic "A" brand mark, 72 tall.
+class AppLogo extends StatelessWidget {
+  const AppLogo({super.key, this.height = 72});
+  final double height;
 
   @override
   Widget build(BuildContext context) => Semantics(
     label: 'Authentic',
     image: true,
-    child: Container(
-      width: 72,
-      height: 72,
-      decoration: BoxDecoration(color: AppColors.ink, borderRadius: BorderRadius.circular(18)),
-      child: const Icon(Icons.gavel, color: AppColors.onInk, size: 36),
-    ),
+    child: Image.asset('assets/brand/logo_mark.png', height: height, excludeFromSemantics: true),
   );
 }
 

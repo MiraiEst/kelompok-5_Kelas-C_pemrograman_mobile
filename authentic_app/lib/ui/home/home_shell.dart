@@ -15,10 +15,10 @@ class HomeShell extends ConsumerWidget {
   final StatefulNavigationShell shell;
 
   static const _items = [
-    (icon: Icons.home_outlined, active: Icons.home),
-    (icon: Icons.trending_up, active: Icons.trending_up),
-    (icon: Icons.gavel_outlined, active: Icons.gavel),
-    (icon: Icons.person_outline, active: Icons.person),
+    Icons.home_outlined,
+    Icons.trending_up,
+    Icons.gavel_outlined,
+    Icons.person_outline,
   ];
 
   @override
@@ -49,7 +49,7 @@ class _NavBar extends StatelessWidget {
     return DecoratedBox(
       decoration: const BoxDecoration(
         color: AppColors.background,
-        border: Border(top: BorderSide(color: AppColors.line)),
+        border: Border(top: BorderSide(color: AppColors.outlineSoft)),
       ),
       child: SafeArea(
         top: false,
@@ -77,39 +77,31 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final item = HomeShell._items[index];
     final l = context.l10n;
     final label = [l.navHome, l.navTrending, l.navYourBids, l.navAccount][index];
-    final color = selected ? AppColors.ink : AppColors.muted;
+    final color = selected ? AppColors.brand : AppColors.navInactive;
     return Semantics(
       button: true,
       selected: selected,
       label: label,
       excludeSemantics: true,
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          children: [
-            Container(
-              height: AppSizes.indicator,
-              width: 40,
-              color: selected ? AppColors.ink : Colors.transparent,
-            ),
-            const Spacer(),
-            Icon(selected ? item.active : item.icon, color: color, size: 26),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: color,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+      // Icons only; the label is kept for screen readers and the long-press tooltip.
+      child: Tooltip(
+        message: label,
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
+            children: [
+              // Full-width bar along the top edge of the active tab.
+              Container(
+                height: AppSizes.indicator,
+                color: selected ? AppColors.brandBright : Colors.transparent,
               ),
-            ),
-            const Spacer(),
-          ],
+              const Spacer(),
+              Icon(HomeShell._items[index], color: color, size: 30),
+              const Spacer(),
+            ],
+          ),
         ),
       ),
     );

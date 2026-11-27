@@ -180,6 +180,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get endingSoon => 'Ending soon';
 
   @override
+  String get hotDeals => 'Hot deals';
+
+  @override
   String get allAuctions => 'All auctions';
 
   @override

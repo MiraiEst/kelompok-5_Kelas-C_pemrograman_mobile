@@ -44,6 +44,29 @@ abstract final class AppColors {
 
   static const shadow = Color(0x42000000);
 
-  /// Validation errors (the only non-grey colour, needed for accessibility).
+  /// Validation errors.
   static const error = Color(0xFFB3261E);
+
+  // Authentic brand palette (home redesign).
+
+  /// Deep teal: section titles, selected chip, active tab icon.
+  static const brand = Color(0xFF036786);
+
+  /// Bright cyan: countdown badges, active tab indicator.
+  static const brandBright = Color(0xFF00ACEB);
+
+  /// Light cyan for icons sitting on [brandTint].
+  static const brandIcon = Color(0xFF1DC3FF);
+
+  /// Pale cyan header background.
+  static const brandTint = Color(0xFFDEFAFF);
+
+  /// Primary call to action (the Sell button).
+  static const action = Color(0xFF1991EA);
+
+  /// Outlines of the search box and unselected chips.
+  static const outlineSoft = Color(0xFFCCCCCC);
+
+  /// Unselected tab icons.
+  static const navInactive = Color(0xFF999999);
 }

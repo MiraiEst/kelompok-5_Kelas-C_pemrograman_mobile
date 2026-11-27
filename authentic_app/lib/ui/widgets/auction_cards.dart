@@ -9,44 +9,103 @@ import '../../providers/providers.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
 
-/// "Ending soon" card: 140 wide, photo 140x104, price, live "Ends in".
-class EndingSoonCard extends ConsumerWidget {
-  const EndingSoonCard({super.key, required this.listing});
+/// Photo in a white rounded card with a soft shadow and a live
+/// "00:14:05" countdown badge in the top-left corner.
+class _BadgedPhoto extends ConsumerWidget {
+  const _BadgedPhoto({required this.listing, required this.height});
   final Listing listing;
-
-  static const width = 140.0;
-
-  /// Row height for the horizontal list at the given text scale.
-  static double height(double textScale) => 104 + 10 + 56 * textScale;
+  final double height;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    const radius = BorderRadius.all(Radius.circular(AppRadius.photoSmall));
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: radius,
+        boxShadow: [BoxShadow(color: Color(0x29000000), blurRadius: 4, offset: Offset(0, 1))],
+      ),
+      child: Stack(
+        children: [
+          ListingImage(
+            url: listing.thumbnail,
+            width: double.infinity,
+            height: height,
+            borderRadius: radius,
+          ),
+          Positioned(
+            left: 6,
+            top: 6,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: AppColors.brandBright,
+                borderRadius: BorderRadius.all(Radius.circular(4)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                child: CountdownText(
+                  endsAt: listing.endsAt,
+                  style: const TextStyle(
+                    color: AppColors.onInk,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                  onFinished: () => ref.read(auctionCloserProvider).ensureClosed(listing),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Hot deals" card: 136 wide, badged photo, 1-line title, bold price.
+class EndingSoonCard extends StatelessWidget {
+  const EndingSoonCard({super.key, required this.listing});
+  final Listing listing;
+
+  static const width = 136.0;
+  static const photoHeight = 90.0;
+
+  /// Row height for the horizontal list at the given text scale
+  /// (includes room for the photo shadow).
+  static double height(double textScale) => photoHeight + 12 + 44 * textScale;
+
+  @override
+  Widget build(BuildContext context) {
     final l = listing;
     return Semantics(
       button: true,
       label: '${l.title}, ${l.currentPrice.toRupiah()}',
       child: InkWell(
         onTap: () => context.push('/listing/${l.id}'),
-        borderRadius: BorderRadius.circular(AppRadius.photo),
+        borderRadius: BorderRadius.circular(AppRadius.photoSmall),
         child: SizedBox(
           width: width,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ListingImage(
-                url: l.thumbnail,
-                width: width,
-                height: 104,
-                borderRadius: BorderRadius.circular(AppRadius.photo),
-              ),
+              _BadgedPhoto(listing: l, height: photoHeight),
               const SizedBox(height: 8),
-              Text(l.currentPrice.toRupiah(), style: AppText.price, maxLines: 1),
+              Text(
+                l.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.caption.copyWith(color: AppColors.ink),
+              ),
               const SizedBox(height: 2),
-              CountdownText(
-                endsAt: l.endsAt,
-                prefix: context.l10n.endsIn,
-                style: AppText.caption,
-                onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),
+              Text(
+                l.currentPrice.toRupiah(),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -56,14 +115,16 @@ class EndingSoonCard extends ConsumerWidget {
   }
 }
 
-/// Grid card: photo 130 high, 2-line title, price, "12 bids · 3h 20m".
+/// Grid card: badged photo, 1-line title, large price, "7 bids · 12h 40m".
 class AuctionGridCard extends ConsumerWidget {
   const AuctionGridCard({super.key, required this.listing});
   final Listing listing;
 
+  static const photoHeight = 116.0;
+
   /// Height for a grid cell at the current text scale.
   static double extent(BuildContext context) =>
-      130 + 14 + MediaQuery.textScalerOf(context).scale(1) * 100;
+      photoHeight + 14 + MediaQuery.textScalerOf(context).scale(1) * 80;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -76,28 +137,31 @@ class AuctionGridCard extends ConsumerWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: () => context.push('/listing/${l.id}'),
-        borderRadius: BorderRadius.circular(AppRadius.photo),
+        borderRadius: BorderRadius.circular(AppRadius.photoSmall),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ListingImage(
-              url: l.thumbnail,
-              width: double.infinity,
-              height: 130,
-              borderRadius: BorderRadius.circular(AppRadius.photo),
-            ),
+            _BadgedPhoto(listing: l, height: photoHeight),
             const SizedBox(height: 8),
-            Text(l.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.small),
-            const SizedBox(height: 4),
-            Text(price.toRupiah(), style: AppText.price, maxLines: 1),
+            Text(l.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.small),
+            const SizedBox(height: 2),
+            Text(
+              price.toRupiah(),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 2),
             CountdownText(
               endsAt: l.endsAt,
-              prefix: showBuyNow
-                  ? context.l10n.buyItNowPrefix
-                  : context.l10n.nBidsPrefix(l.bidCount),
+              prefix:
+                  '${showBuyNow ? context.l10n.buyItNowPrefix : context.l10n.nBidsPrefix(l.bidCount)} ',
               format: (d) => d.toShort(),
-              style: AppText.caption,
+              style: const TextStyle(fontSize: 11, color: AppColors.ink),
               onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),
             ),
           ],
@@ -115,11 +179,11 @@ class AuctionGridSkeleton extends StatelessWidget {
   Widget build(BuildContext context) => const Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      SkeletonBox(height: 130, width: double.infinity),
+      SkeletonBox(height: AuctionGridCard.photoHeight, width: double.infinity),
       SizedBox(height: 8),
       SkeletonBox(height: 12, width: 120, radius: 4),
       SizedBox(height: 6),
-      SkeletonBox(height: 14, width: 80, radius: 4),
+      SkeletonBox(height: 16, width: 90, radius: 4),
       SizedBox(height: 6),
       SkeletonBox(height: 10, width: 100, radius: 4),
     ],
