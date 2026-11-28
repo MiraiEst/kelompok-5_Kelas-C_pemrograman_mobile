@@ -62,7 +62,7 @@ class _Detail extends ConsumerWidget {
       l.condition.text(context),
       category,
       if (l.location != null && l.location!.isNotEmpty) context.l10n.shipsFrom(l.location!),
-    ].join(' · ');
+    ].join(' • ');
 
     return Scaffold(
       body: CustomScrollView(
@@ -76,15 +76,17 @@ class _Detail extends ConsumerWidget {
               children: [
                 Text(l.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.title),
                 const SizedBox(height: 4),
-                Text(meta, style: AppText.meta),
+                Text(meta, style: AppText.meta.copyWith(color: AppColors.navInactive)),
+                const SizedBox(height: 12),
+                _PriceCard(listing: l, user: user),
                 const SizedBox(height: 12),
                 _SellerRow(listing: l),
-                const SizedBox(height: 12),
-                _StatusBanner(listing: l, user: user),
-                _PriceCard(listing: l),
                 if (user.isAdmin || l.sellerId == user.uid) _SellerControls(listing: l, user: user),
                 const SizedBox(height: 24),
-                SectionHeader(context.l10n.description),
+                Semantics(
+                  header: true,
+                  child: Text(context.l10n.description, style: _sectionTitle),
+                ),
                 const SizedBox(height: 6),
                 _Description(text: l.description),
                 const SizedBox(height: 16),
@@ -146,11 +148,17 @@ class _GalleryState extends ConsumerState<_Gallery> {
     final watched = ref.watch(watchlistIdsProvider).value?.contains(l.id) ?? false;
     final canWatch = l.sellerId != widget.user.uid;
 
-    return SizedBox(
-      height: 300,
+    return Container(
+      height: 340,
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        border: Border(bottom: BorderSide(color: AppColors.line, width: 1.5)),
+      ),
       child: Stack(
         children: [
           Positioned.fill(
+            top: 56,
+            bottom: 28,
             child: urls.isEmpty
                 ? const ListingImage(url: null)
                 : PageView.builder(
@@ -160,6 +168,7 @@ class _GalleryState extends ConsumerState<_Gallery> {
                       onTap: () => _openFullScreen(i),
                       child: ListingImage(
                         url: urls[i],
+                        fit: BoxFit.contain,
                         semanticLabel: context.l10n.photoOf(i + 1, urls.length),
                       ),
                     ),
@@ -176,20 +185,23 @@ class _GalleryState extends ConsumerState<_Gallery> {
                 child: Row(
                   children: [
                     RoundIconButton(
-                      icon: Icons.arrow_back,
+                      color: AppColors.ocean,
+                      icon: Icons.arrow_back_ios_new,
                       tooltip: context.l10n.back,
                       onPressed: () => context.canPop() ? context.pop() : context.go('/home'),
                     ),
                     const Spacer(),
                     RoundIconButton(
-                      icon: Icons.share_outlined,
+                      color: AppColors.ocean,
+                      icon: Icons.ios_share,
                       tooltip: context.l10n.share,
                       onPressed: _share,
                     ),
                     if (canWatch) ...[
                       const SizedBox(width: 8),
                       RoundIconButton(
-                        icon: watched ? Icons.favorite : Icons.favorite_border,
+                        color: AppColors.ocean,
+                        icon: watched ? Icons.bookmark : Icons.bookmark_border,
                         tooltip: watched
                             ? context.l10n.removeFromWatchlist
                             : context.l10n.addToWatchlist,
@@ -204,18 +216,11 @@ class _GalleryState extends ConsumerState<_Gallery> {
           ),
           if (urls.length > 1)
             Positioned(
-              right: 12,
-              bottom: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.ink.withValues(alpha: 0.75),
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-                child: Text(
-                  '${_page + 1} / ${urls.length}',
-                  style: const TextStyle(color: AppColors.onInk, fontSize: 12),
-                ),
+              right: 16,
+              bottom: 6,
+              child: Text(
+                '${_page + 1} / ${urls.length}',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               ),
             ),
         ],
@@ -323,70 +328,37 @@ class _SellerRow extends ConsumerWidget {
   }
 }
 
-/// Personal status for the signed-in user. Hidden if they never bid.
-class _StatusBanner extends ConsumerWidget {
-  const _StatusBanner({required this.listing, required this.user});
+/// Personal status for the signed-in user, or null if they never bid.
+/// `pay` is true when they won and still have to pay.
+({String message, bool pay})? _myStatus(BuildContext context, Listing l, String uid, int? myMax) {
+  final didBid = l.bidderIds.contains(uid) || l.winnerId == uid;
+  if (!didBid) return null;
+  final ended = !l.isLive(DateTime.now());
+  // Advanced Dart: switch expression over a record with guards.
+  return switch ((ended, l.leaderId == uid)) {
+    (true, _) when l.winnerId == uid => (message: context.l10n.youWonItem, pay: true),
+    (true, _) => (message: context.l10n.youDidntWin, pay: false),
+    (false, true) => (
+      message: context.l10n.youreHighestMax((myMax ?? l.leaderMax ?? l.currentPrice).toRupiah()),
+      pay: false,
+    ),
+    (false, false) => (message: context.l10n.youveBeenOutbid, pay: false),
+  };
+}
+
+/// Ocean card: status strip, current price, conversions, counts and the timer.
+class _PriceCard extends ConsumerWidget {
+  const _PriceCard({required this.listing, required this.user});
   final Listing listing;
   final AppUser user;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = listing;
-    final uid = user.uid;
-    final didBid = l.bidderIds.contains(uid) || l.winnerId == uid;
-    if (!didBid) return const SizedBox();
-    final ended = !l.isLive(DateTime.now());
-    final myMax = ref.watch(myMaxProvider(l.id)).value;
-
-    // Advanced Dart: switch expression over a record with guards.
-    final (message, action) = switch ((ended, l.leaderId == uid)) {
-      (true, _) when l.winnerId == uid => (context.l10n.youWonItem, true),
-      (true, _) => (context.l10n.youDidntWin, false),
-      (false, true) => (
-        context.l10n.youreHighestMax((myMax ?? l.leaderMax ?? l.currentPrice).toRupiah()),
-        false,
-      ),
-      (false, false) => (context.l10n.youveBeenOutbid, false),
-    };
-
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border.all(color: AppColors.ink, width: 2),
-          borderRadius: BorderRadius.circular(AppRadius.input),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(message, style: const TextStyle(fontWeight: FontWeight.w700)),
-            if (action) ...[
-              const SizedBox(height: 10),
-              PrimaryButton(
-                label: context.l10n.payNow,
-                onPressed: () => context.push('/checkout/${l.id}'),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PriceCard extends ConsumerWidget {
-  const _PriceCard({required this.listing});
-  final Listing listing;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = listing;
     final bids = ref.watch(bidsProvider(l.id)).value ?? const <Bid>[];
     final bidders = bids.map((b) => b.userId).toSet().length;
+    final myMax = ref.watch(myMaxProvider(l.id)).value;
+    final status = _myStatus(context, l, user.uid, myMax);
     final price = l.isBuyNowOnly
         ? l.finalPrice ?? l.buyNowPrice ?? l.currentPrice
         : l.finalPrice ?? l.currentPrice;
@@ -395,68 +367,116 @@ class _PriceCard extends ConsumerWidget {
       _ when l.isActive => context.l10n.currentPrice,
       _ => context.l10n.finalPrice,
     };
+    const small = TextStyle(fontSize: 12, color: AppColors.onInk);
+    final faded = small.copyWith(color: AppColors.onInk.withValues(alpha: 0.75));
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.line),
-        borderRadius: BorderRadius.circular(AppRadius.card),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: AppText.caption),
-          Text(price.toRupiah(), style: AppText.priceHero),
-          _Conversion(amountIdr: price),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 16,
-            runSpacing: 4,
-            children: [
-              if (!l.isBuyNowOnly) ...[
-                Text(context.l10n.nBids(l.bidCount), style: AppText.small),
-                Text(context.l10n.nBidders(bidders), style: AppText.small),
-              ],
-              Text(context.l10n.nWatching(l.watcherCount), style: AppText.small),
-              if (l.hasReserve && !l.isBuyNowOnly)
-                Text(
-                  l.reserveMet ? context.l10n.reserveMet : context.l10n.reserveNotMet,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                ),
-            ],
-          ),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
-          if (l.isActive)
-            Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.input),
+          child: ColoredBox(
+            color: AppColors.ocean,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: CountdownText(
-                    endsAt: l.endsAt,
-                    prefix: context.l10n.endsIn,
-                    style: AppText.emphasis,
-                    onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),
+                if (status != null)
+                  Semantics(
+                    liveRegion: true,
+                    child: Container(
+                      color: AppColors.brandBright,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      child: Text(
+                        status.message,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onInk,
+                        ),
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(label, style: faded),
+                      Text(
+                        price.toRupiah(),
+                        style: AppText.priceHero.copyWith(color: AppColors.onInk),
+                      ),
+                      _Conversion(amountIdr: price, style: faded),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 4,
+                        children: [
+                          if (!l.isBuyNowOnly) ...[
+                            Text(context.l10n.nBids(l.bidCount), style: small),
+                            Text(context.l10n.nBidders(bidders), style: small),
+                          ],
+                          Text(context.l10n.nWatching(l.watcherCount), style: small),
+                          if (l.hasReserve && !l.isBuyNowOnly)
+                            Text(
+                              l.reserveMet ? context.l10n.reserveMet : context.l10n.reserveNotMet,
+                              style: small.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Divider(color: AppColors.onInk.withValues(alpha: 0.4)),
+                      ),
+                      if (l.isActive)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: CountdownText(
+                                endsAt: l.endsAt,
+                                prefix: context.l10n.endsIn,
+                                style: AppText.emphasis.copyWith(
+                                  fontSize: 18,
+                                  color: AppColors.onInk,
+                                ),
+                                onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),
+                              ),
+                            ),
+                            Text(endDateFormat.format(l.endsAt), style: small),
+                          ],
+                        )
+                      else
+                        Text(switch (l.status) {
+                          ListingStatus.sold => context.l10n.sold,
+                          ListingStatus.unsold => context.l10n.endedNotSold,
+                          ListingStatus.ended => context.l10n.endedBySeller,
+                          ListingStatus.active => '',
+                        }, style: AppText.emphasis.copyWith(color: AppColors.onInk)),
+                    ],
                   ),
                 ),
-                Text(endDateFormat.format(l.endsAt), style: AppText.caption),
               ],
-            )
-          else
-            Text(switch (l.status) {
-              ListingStatus.sold => context.l10n.sold,
-              ListingStatus.unsold => context.l10n.endedNotSold,
-              ListingStatus.ended => context.l10n.endedBySeller,
-              ListingStatus.active => '',
-            }, style: AppText.emphasis),
+            ),
+          ),
+        ),
+        if (status?.pay ?? false) ...[
+          const SizedBox(height: 12),
+          PrimaryButton(
+            color: AppColors.ocean,
+            label: context.l10n.payNow,
+            onPressed: () => context.push('/checkout/${l.id}'),
+          ),
         ],
-      ),
+      ],
     );
   }
 }
 
 /// Price in other currencies via the open-source Frankfurter API.
 class _Conversion extends ConsumerWidget {
-  const _Conversion({required this.amountIdr});
+  const _Conversion({required this.amountIdr, this.style});
   final int amountIdr;
+  final TextStyle? style;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -473,7 +493,7 @@ class _Conversion extends ConsumerWidget {
           fmt('EUR', '€'),
           fmt('SGD', r'S$'),
         ].where((s) => s.isNotEmpty);
-        return Text('≈ ${parts.join(' · ')}', style: AppText.caption);
+        return Text('≈ ${parts.join(' · ')}', style: style ?? AppText.caption);
       },
       orElse: () => const SizedBox(),
     );
@@ -518,7 +538,10 @@ class _DescriptionState extends State<_Description> {
             ),
             if (overflows || _expanded)
               TextButton(
-                style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  foregroundColor: AppColors.ocean,
+                ),
                 onPressed: () => setState(() => _expanded = !_expanded),
                 child: Text(_expanded ? context.l10n.showLess : context.l10n.readMore),
               ),
@@ -557,17 +580,16 @@ class _InfoTable extends StatelessWidget {
     return Column(
       children: [
         for (final (label, value) in rows)
-          Container(
-            constraints: const BoxConstraints(minHeight: 44),
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.line)),
-            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(width: 120, child: Text(label, style: AppText.meta)),
-                Expanded(child: Text(value, style: AppText.small)),
+                Text(label, style: AppText.body),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(value, textAlign: TextAlign.end, style: AppText.body),
+                ),
               ],
             ),
           ),
@@ -587,7 +609,8 @@ class _BidHistorySection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(context.l10n.bidHistory),
+        Semantics(header: true, child: Text(context.l10n.bidHistory, style: _sectionTitle)),
+        const SizedBox(height: 4),
         switch (bids) {
           AsyncValue(:final value?) when value.isEmpty => Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -599,8 +622,14 @@ class _BidHistorySection extends ConsumerWidget {
               BidHistoryList(bids: value, limit: 3),
               if (value.length > 3)
                 Align(
-                  alignment: Alignment.centerLeft,
                   child: TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.ocean,
+                      textStyle: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
                     onPressed: () => showModalBottomSheet<void>(
                       context: context,
                       isScrollControlled: true,
@@ -627,7 +656,11 @@ class _BidHistorySection extends ConsumerWidget {
           _ => const LinearProgressIndicator(),
         },
         const SizedBox(height: 8),
-        Text(context.l10n.namesMasked, style: AppText.caption),
+        Text(
+          context.l10n.namesMasked,
+          textAlign: TextAlign.center,
+          style: AppText.caption.copyWith(color: AppColors.navInactive),
+        ),
       ],
     );
   }
@@ -649,36 +682,24 @@ class BidHistoryList extends StatelessWidget {
     return Column(
       children: [
         for (final b in shown)
-          Container(
-            constraints: const BoxConstraints(minHeight: 48),
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.line)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text.rich(
-                        TextSpan(
-                          text: b.maskedName,
-                          children: [
-                            TextSpan(
-                              text: ' (${context.l10n.nBids(perBidder[b.userId] ?? 0)})',
-                              style: const TextStyle(color: AppColors.muted),
-                            ),
-                          ],
-                        ),
-                        style: AppText.small,
-                      ),
-                      Text(fmt.format(b.createdAt), style: AppText.caption),
-                    ],
+          Semantics(
+            label: fmt.format(b.createdAt),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${b.maskedName} (${context.l10n.nBids(perBidder[b.userId] ?? 0)})',
+                      style: AppText.body,
+                    ),
                   ),
-                ),
-                Text(b.priceAfter.toRupiah(), style: const TextStyle(fontWeight: FontWeight.w600)),
-              ],
+                  Text(
+                    b.priceAfter.toRupiah(),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
             ),
           ),
       ],
@@ -814,12 +835,14 @@ class _BottomBar extends ConsumerWidget {
             children: [
               if (l.isBuyNowOnly)
                 PrimaryButton(
+                  color: AppColors.ocean,
                   label: context.l10n.buyItNowPrice((l.buyNowPrice ?? 0).toRupiah()),
                   onPressed: showBuyNow ? () => _buyNow(context, ref) : null,
                 )
               else ...[
                 if (showBuyNow) ...[
                   SecondaryButton(
+                    color: AppColors.ocean,
                     label: context.l10n.buyItNowPrice(l.buyNowPrice!.toRupiah()),
                     onPressed: () => _buyNow(context, ref),
                   ),
@@ -841,6 +864,7 @@ class _BottomBar extends ConsumerWidget {
                     Expanded(
                       flex: 2,
                       child: PrimaryButton(
+                        color: AppColors.ocean,
                         label: isLeader ? context.l10n.raiseMaxBid : context.l10n.placeMaxBid,
                         onPressed: () => showPlaceBidSheet(context, l.id),
                       ),
@@ -855,3 +879,5 @@ class _BottomBar extends ConsumerWidget {
     );
   }
 }
+
+const _sectionTitle = TextStyle(fontSize: 16, fontWeight: FontWeight.w700);

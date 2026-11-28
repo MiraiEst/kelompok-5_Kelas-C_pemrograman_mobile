@@ -108,7 +108,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.checkout)),
+      appBar: brandAppBar(context, Text(context.l10n.checkout)),
       body: switch (order) {
         AsyncValue(:final value?) when value.status.isPaid => _AlreadyPaid(orderId: value.id),
         AsyncValue(:final value?) => Builder(
@@ -155,16 +155,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       padding: const EdgeInsets.all(16),
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.cyanSoft, width: 1.5),
+            borderRadius: BorderRadius.circular(AppRadius.input),
           ),
           child: Row(
             children: [
               ListingImage(
                 url: o.imageUrl,
-                size: 64,
+                size: 72,
                 borderRadius: BorderRadius.circular(AppRadius.photoSmall),
               ),
               const SizedBox(width: 12),
@@ -176,13 +176,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       o.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppText.small,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(height: 2),
-                    Text(context.l10n.wonFor(o.itemPrice.toRupiah()), style: AppText.price),
+                    const SizedBox(height: 4),
+                    Text(
+                      context.l10n.wonFor(o.itemPrice.toRupiah()),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
                     CountdownText(
                       endsAt: o.payBy,
-                      prefix: context.l10n.payWithin,
+                      prefix: '${context.l10n.payWithin} ',
                       format: (d) => d.toShort(),
                       style: AppText.caption,
                     ),
@@ -195,8 +199,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         const SizedBox(height: 24),
         SectionHeader(
           context.l10n.shippingAddress,
-          onSeeAll: _changeAddress,
-          actionLabel: _address == null ? context.l10n.add : context.l10n.change,
+          trailing: TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.ocean),
+            onPressed: _changeAddress,
+            child: Text(_address == null ? context.l10n.add : context.l10n.change),
+          ),
         ),
         const SizedBox(height: 8),
         if (_address != null)
@@ -231,7 +238,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         const SizedBox(height: 16),
         PriceSummary(prices: prices),
         const SizedBox(height: 12),
-        Text(context.l10n.heldNote, style: AppText.caption),
+        Text(context.l10n.heldNote, style: AppText.caption.copyWith(color: AppColors.navInactive)),
       ],
     );
   }
@@ -244,21 +251,23 @@ class PriceSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const totalStyle = TextStyle(fontSize: 18, fontWeight: FontWeight.w700);
     Widget row(String label, int value, {bool total = false}) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: total ? AppText.sectionTitle : AppText.body)),
+          Expanded(child: Text(label, style: total ? totalStyle : AppText.body)),
           Text(
             value.toRupiah(),
             key: total ? const Key('checkoutTotal') : null,
-            style: total ? AppText.sectionTitle : AppText.body,
+            style: total ? totalStyle : AppText.body,
           ),
         ],
       ),
     );
     return Column(
       children: [
+        const Padding(padding: EdgeInsets.only(bottom: 8), child: Divider()),
         row(context.l10n.winningPrice, prices.item),
         row(context.l10n.shipping, prices.shipping),
         row(context.l10n.serviceFee, prices.fee),
@@ -300,30 +309,49 @@ class _RadioCard extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 56),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.card),
+            color: selected ? AppColors.brandBright : AppColors.background,
+            borderRadius: BorderRadius.circular(AppRadius.input),
             border: Border.all(
-              color: selected ? AppColors.ink : AppColors.line,
-              width: selected ? 2 : 1,
+              color: selected ? AppColors.brandBright : AppColors.navInactive,
+              width: 1.5,
             ),
           ),
           child: Row(
             children: [
               Icon(
                 selected ? Icons.radio_button_checked : Icons.radio_button_off,
-                color: AppColors.ink,
+                color: selected ? AppColors.onInk : AppColors.navInactive,
+                size: 26,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text(subtitle, style: AppText.caption),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                        color: selected ? AppColors.onInk : AppColors.ink,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: AppText.caption.copyWith(
+                        color: selected ? AppColors.onInk.withValues(alpha: 0.75) : null,
+                      ),
+                    ),
                   ],
                 ),
               ),
               if (trailing != null)
-                Text(trailing!, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  trailing!,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: selected ? AppColors.onInk : AppColors.ink,
+                  ),
+                ),
             ],
           ),
         ),
@@ -340,15 +368,13 @@ class _PayBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(
-      color: AppColors.background,
-      border: Border(top: BorderSide(color: AppColors.line)),
-    ),
+    decoration: const BoxDecoration(color: AppColors.background),
     child: SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         child: PrimaryButton(
+          color: AppColors.ocean,
           label: context.l10n.payWithXendit,
           loading: loading,
           onPressed: enabled ? onPay : null,

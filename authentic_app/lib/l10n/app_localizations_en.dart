@@ -1204,6 +1204,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ratedBuyer => 'You rated this buyer. Thanks!';
 
   @override
+  String get commentHint => 'How was the item and shipping?';
+
+  @override
+  String nStars(int count) {
+    return '$count stars';
+  }
+
+  @override
+  String get addThreeZeros => 'Add three zeros';
+
+  @override
   String get comment => 'Comment';
 
   @override

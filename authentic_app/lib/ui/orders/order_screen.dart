@@ -18,7 +18,6 @@ import '../widgets/app_text_field.dart';
 import '../widgets/buttons.dart';
 import '../widgets/common.dart';
 import '../widgets/section_header.dart';
-import '../widgets/segmented_tabs.dart';
 
 DateFormat get _dateTime => DateFormat('d MMM, HH:mm');
 
@@ -40,8 +39,9 @@ class OrderScreen extends ConsumerWidget {
     final isSeller = o != null && o.sellerId == uid;
 
     return Scaffold(
-      appBar: AppBar(
-        title: o == null
+      appBar: brandAppBar(
+        context,
+        o == null
             ? Text(context.l10n.order)
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,23 +107,24 @@ class _OrderBody extends ConsumerWidget {
       children: [
         Row(
           children: [
-            ListingImage(
-              url: o.imageUrl,
-              size: 64,
-              borderRadius: BorderRadius.circular(AppRadius.photoSmall),
-            ),
-            const SizedBox(width: 12),
+            PhotoCard(url: o.imageUrl, size: 72),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(o.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.small),
-                  const SizedBox(height: 2),
+                  Text(
+                    o.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
                   Text(
                     o.status.isPaid
                         ? context.l10n.amountPaid(o.total.toRupiah())
                         : '${o.total.toRupiah()} · ${o.status.text(context)}',
-                    style: AppText.price,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
@@ -158,12 +159,14 @@ class _OrderBody extends ConsumerWidget {
         if (isSeller && o.status == OrderStatus.paid) _ShipForm(order: o),
         if (isSeller && o.status == OrderStatus.shipped)
           PrimaryButton(
+            color: AppColors.ocean,
             label: context.l10n.markInTransit,
             onPressed: () =>
                 _run(context, () => repo.markInTransit(o.id), context.l10n.markedInTransit),
           ),
         if (isSeller && o.status == OrderStatus.inTransit)
           PrimaryButton(
+            color: AppColors.ocean,
             label: context.l10n.markDelivered,
             onPressed: () =>
                 _run(context, () => repo.markDelivered(o.id), context.l10n.markedDelivered),
@@ -177,7 +180,9 @@ class _OrderBody extends ConsumerWidget {
 
         // --- Buyer actions ------------------------------------------------------
         if (!isSeller && o.status.isPaid && o.status != OrderStatus.completed) ...[
+          const SizedBox(height: 16),
           PrimaryButton(
+            color: AppColors.ocean,
             label: context.l10n.iReceivedItem,
             onPressed: canConfirm
                 ? () async {
@@ -211,6 +216,7 @@ class _OrderBody extends ConsumerWidget {
           const SizedBox(height: 10),
           if (!o.hasOpenCase)
             SecondaryButton(
+              color: AppColors.ocean,
               label: context.l10n.reportProblem,
               onPressed: () => showModalBottomSheet<void>(
                 context: context,
@@ -219,8 +225,12 @@ class _OrderBody extends ConsumerWidget {
                 builder: (_) => _ReportSheet(order: o),
               ),
             ),
-          const SizedBox(height: 8),
-          Text(context.l10n.buyerProtectionNote, style: AppText.caption),
+          const SizedBox(height: 12),
+          Text(
+            context.l10n.buyerProtectionNote,
+            textAlign: TextAlign.center,
+            style: AppText.meta.copyWith(color: AppColors.body),
+          ),
         ],
         if (canRate) ...[const SizedBox(height: 24), _RateCard(order: o, asBuyer: !isSeller)],
       ],
@@ -241,14 +251,15 @@ class _AwaitingPayment extends StatelessWidget {
       const SizedBox(height: 4),
       CountdownText(
         endsAt: order.payBy,
-        prefix: isSeller ? context.l10n.buyerHas : context.l10n.payWithin,
-        suffix: isSeller ? context.l10n.toPaySuffix : '',
+        prefix: '${isSeller ? context.l10n.buyerHas : context.l10n.payWithin} ',
+        suffix: isSeller ? ' ${context.l10n.toPaySuffix}' : '',
         format: (d) => d.toShort(),
         style: AppText.meta,
       ),
       if (!isSeller) ...[
         const SizedBox(height: 16),
         PrimaryButton(
+          color: AppColors.ocean,
           label: context.l10n.payNow,
           onPressed: () => context.push('/checkout/${order.id}'),
         ),
@@ -270,20 +281,17 @@ class OrderStepper extends StatelessWidget {
     final steps = [
       (
         title: context.l10n.statusPaid,
-        detail: [when(o.paidAt), ?payment].where((s) => s.isNotEmpty).join(' · '),
+        detail: [when(o.paidAt), ?payment].where((s) => s.isNotEmpty).join(', '),
         copy: false,
       ),
       (
         title: context.l10n.statusShipped,
-        detail: [
-          when(o.shippedAt),
-          if (o.courier != null && o.trackingNumber != null) '${o.courier} · ${o.trackingNumber}',
-        ].where((s) => s.isNotEmpty).join('\n'),
+        detail: [when(o.shippedAt), ?o.courier].where((s) => s.isNotEmpty).join(', '),
         copy: o.trackingNumber != null,
       ),
       (
         title: context.l10n.statusInTransit,
-        detail: [when(o.inTransitAt), ?o.lastUpdate].where((s) => s.isNotEmpty).join(' · '),
+        detail: [when(o.inTransitAt), ?o.lastUpdate].where((s) => s.isNotEmpty).join('\n'),
         copy: false,
       ),
       (
@@ -315,6 +323,7 @@ class OrderStepper extends StatelessWidget {
                 : (i == current ? _StepState.current : _StepState.upcoming),
             last: i == steps.length - 1,
             nextDone: i + 1 < current,
+            tracking: steps[i].copy && i < current ? o.trackingNumber : null,
             onCopy: steps[i].copy
                 ? () async {
                     await Clipboard.setData(ClipboardData(text: o.trackingNumber!));
@@ -336,6 +345,7 @@ class _Step extends StatelessWidget {
     required this.state,
     required this.last,
     required this.nextDone,
+    this.tracking,
     this.onCopy,
   });
 
@@ -344,35 +354,38 @@ class _Step extends StatelessWidget {
   final _StepState state;
   final bool last;
   final bool nextDone;
+  final String? tracking;
   final VoidCallback? onCopy;
 
   @override
   Widget build(BuildContext context) {
+    const size = 32.0;
     final circle = switch (state) {
       _StepState.done => Container(
-        width: 24,
-        height: 24,
-        decoration: const BoxDecoration(color: AppColors.ink, shape: BoxShape.circle),
-        child: const Icon(Icons.check, size: 16, color: AppColors.onInk),
+        width: size,
+        height: size,
+        decoration: const BoxDecoration(color: AppColors.brandBright, shape: BoxShape.circle),
+        child: const Icon(Icons.check, size: 20, color: AppColors.onInk),
       ),
       _StepState.current => Container(
-        width: 24,
-        height: 24,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: AppColors.background,
           shape: BoxShape.circle,
-          border: Border.all(color: AppColors.ink, width: 3),
+          border: Border.all(color: AppColors.brandBright, width: 2.5),
         ),
       ),
       _StepState.upcoming => Container(
-        width: 24,
-        height: 24,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: AppColors.inputBorder, width: 2),
+          border: Border.all(color: AppColors.cyanFaded, width: 2.5),
         ),
       ),
     };
+    final upcoming = state == _StepState.upcoming;
     return Semantics(
       label:
           '$title, ${switch (state) {
@@ -389,36 +402,66 @@ class _Step extends StatelessWidget {
                 circle,
                 if (!last)
                   Expanded(
-                    child: Container(
-                      width: 2,
-                      constraints: const BoxConstraints(minHeight: 24),
-                      color: state == _StepState.done && (nextDone || state == _StepState.done)
-                          ? AppColors.ink
-                          : AppColors.line,
-                    ),
+                    // Solid between finished steps, dotted towards future ones.
+                    child: state == _StepState.done
+                        ? Container(
+                            width: 5,
+                            constraints: const BoxConstraints(minHeight: 28),
+                            color: AppColors.brandBright,
+                          )
+                        : const SizedBox(
+                            width: 5,
+                            child: CustomPaint(painter: _DottedLine(AppColors.cyanFaded)),
+                          ),
                   ),
               ],
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.only(bottom: 28),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
                       style: TextStyle(
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: state == _StepState.upcoming ? AppColors.muted : AppColors.ink,
+                        color: upcoming ? AppColors.body : AppColors.ink,
                       ),
                     ),
-                    if (detail.isNotEmpty) Text(detail, style: AppText.caption),
-                    if (onCopy != null)
-                      TextButton(
-                        style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                        onPressed: onCopy,
-                        child: Text(context.l10n.copyTracking),
+                    const SizedBox(height: 4),
+                    if (detail.isNotEmpty || tracking != null)
+                      Text.rich(
+                        TextSpan(
+                          text: detail,
+                          children: [
+                            if (tracking != null)
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.baseline,
+                                baseline: TextBaseline.alphabetic,
+                                child: Semantics(
+                                  button: true,
+                                  label: context.l10n.copyTracking,
+                                  child: GestureDetector(
+                                    onTap: onCopy,
+                                    child: Text(
+                                      ' [$tracking]',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: upcoming ? AppColors.body : AppColors.ink,
+                        ),
                       ),
                   ],
                 ),
@@ -429,6 +472,24 @@ class _Step extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Vertical dotted connector between order steps.
+class _DottedLine extends CustomPainter {
+  const _DottedLine(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    const dash = 8.0, gap = 6.0;
+    for (var y = gap; y + dash <= size.height; y += dash + gap) {
+      canvas.drawRect(Rect.fromLTWH(0, y, size.width, dash), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DottedLine old) => old.color != color;
 }
 
 /// Seller: courier + tracking number -> "Mark as shipped".
@@ -502,7 +563,12 @@ class _ShipFormState extends ConsumerState<_ShipForm> {
                     (v == null || v.trim().length < 6) ? context.l10n.enterTracking : null,
               ),
               const SizedBox(height: 16),
-              PrimaryButton(label: context.l10n.markAsShipped, loading: _busy, onPressed: _ship),
+              PrimaryButton(
+                color: AppColors.ocean,
+                label: context.l10n.markAsShipped,
+                loading: _busy,
+                onPressed: _ship,
+              ),
             ],
           ),
         );
@@ -685,8 +751,17 @@ class _RateCard extends ConsumerStatefulWidget {
 
 class _RateCardState extends ConsumerState<_RateCard> {
   final _comment = TextEditingController();
-  _Rating _rating = _Rating.positive;
+
+  /// 1-5; 0 = not chosen yet.
+  int _stars = 0;
   bool _busy = false;
+
+  /// The backend keeps eBay-style feedback: 4-5 stars positive, 3 neutral, 1-2 negative.
+  _Rating get _rating => switch (_stars) {
+    >= 4 => _Rating.positive,
+    3 => _Rating.neutral,
+    _ => _Rating.negative,
+  };
 
   @override
   void dispose() {
@@ -723,9 +798,9 @@ class _RateCardState extends ConsumerState<_RateCard> {
         .value;
     final title = widget.asBuyer ? context.l10n.rateSeller : context.l10n.rateBuyer;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: AppColors.oceanLight, width: 2),
         borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: done == true
@@ -736,30 +811,63 @@ class _RateCardState extends ConsumerState<_RateCard> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SectionHeader(title),
-                const SizedBox(height: 8),
-                SegmentedTabs<_Rating>(
-                  values: _Rating.values,
-                  selected: _rating,
-                  label: (r) => r.text(context),
-                  onChanged: (r) => setState(() => _rating = r),
+                Semantics(
+                  header: true,
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    for (var i = 1; i <= 5; i++)
+                      IconButton(
+                        tooltip: context.l10n.nStars(i),
+                        isSelected: i <= _stars,
+                        iconSize: 40,
+                        color: AppColors.ocean,
+                        icon: const Icon(Icons.star_border_rounded),
+                        selectedIcon: const Icon(Icons.star_rounded),
+                        onPressed: () => setState(() => _stars = i),
+                      ),
+                  ],
+                ),
+                if (_stars > 0) Center(child: Text(_rating.text(context), style: AppText.caption)),
                 const SizedBox(height: 12),
-                AppTextField(
-                  label: context.l10n.comment,
+                Text(
+                  context.l10n.comment,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                TextField(
                   controller: _comment,
-                  maxLines: 3,
-                  minLines: 2,
+                  maxLines: 4,
+                  minLines: 4,
                   maxLength: 300,
+                  decoration: InputDecoration(
+                    hintText: context.l10n.commentHint,
+                    counterText: '',
+                    border: _commentBorder(AppColors.oceanMid),
+                    enabledBorder: _commentBorder(AppColors.oceanMid),
+                    focusedBorder: _commentBorder(AppColors.ocean),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 PrimaryButton(
+                  color: AppColors.ocean,
                   label: context.l10n.sendRating,
                   loading: _busy,
-                  onPressed: done == null ? null : _send,
+                  onPressed: done == null || _stars == 0 ? null : _send,
                 ),
               ],
             ),
     );
   }
 }
+
+OutlineInputBorder _commentBorder(Color c) => OutlineInputBorder(
+  borderRadius: BorderRadius.circular(AppRadius.input),
+  borderSide: BorderSide(color: c, width: 2),
+);

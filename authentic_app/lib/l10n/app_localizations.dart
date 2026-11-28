@@ -2277,6 +2277,24 @@ abstract class AppLocalizations {
   /// **'You rated this buyer. Thanks!'**
   String get ratedBuyer;
 
+  /// No description provided for @commentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How was the item and shipping?'**
+  String get commentHint;
+
+  /// No description provided for @nStars.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} stars'**
+  String nStars(int count);
+
+  /// No description provided for @addThreeZeros.
+  ///
+  /// In en, this message translates to:
+  /// **'Add three zeros'**
+  String get addThreeZeros;
+
   /// No description provided for @comment.
   ///
   /// In en, this message translates to:

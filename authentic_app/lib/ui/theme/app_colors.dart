@@ -67,6 +67,25 @@ abstract final class AppColors {
   /// Primary call to action (the Sell button).
   static const action = Color(0xFF1991EA);
 
+  /// Ocean blue: titles and primary buttons on detail screens (checkout,
+  /// order, bid sheet, listing price card).
+  static const ocean = Color(0xFF0082B1);
+
+  /// Pale ocean: back arrow, "How it works" box, rating card border.
+  static const oceanLight = Color(0xFF99CDE0);
+
+  /// Mid ocean: outlines of the bid step buttons.
+  static const oceanMid = Color(0xFF66B4D0);
+
+  /// Cyan outline of the "Won for" card at checkout.
+  static const cyanSoft = Color(0xFF66CDF3);
+
+  /// Faded cyan for upcoming order steps.
+  static const cyanFaded = Color(0xFF99DEF7);
+
+  /// Grey fill of soft secondary buttons ("Cancel").
+  static const softButton = Color(0xFFF0F0F0);
+
   /// Outlines of the search box and unselected chips.
   static const outlineSoft = Color(0xFFCCCCCC);
 

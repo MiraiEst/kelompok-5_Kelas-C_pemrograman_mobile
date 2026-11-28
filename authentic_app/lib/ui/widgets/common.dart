@@ -233,12 +233,16 @@ class RoundIconButton extends StatelessWidget {
     required this.tooltip,
     required this.onPressed,
     this.filled = true,
+    this.color,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback? onPressed;
   final bool filled;
+
+  /// Icon colour; when set the button also gets a thin grey ring.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) => IconButton(
@@ -247,10 +251,11 @@ class RoundIconButton extends StatelessWidget {
     icon: Icon(icon, size: 22),
     style: IconButton.styleFrom(
       backgroundColor: filled ? AppColors.background : null,
-      foregroundColor: AppColors.ink,
+      foregroundColor: color ?? AppColors.ink,
       fixedSize: const Size(AppSizes.touchTarget, AppSizes.touchTarget),
       shadowColor: AppColors.shadow,
-      elevation: filled ? 1 : 0,
+      elevation: filled && color == null ? 1 : 0,
+      side: color == null ? null : const BorderSide(color: AppColors.line),
     ),
   );
 }

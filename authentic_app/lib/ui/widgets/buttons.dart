@@ -12,6 +12,7 @@ class PrimaryButton extends StatelessWidget {
     this.loading = false,
     this.icon,
     this.expand = true,
+    this.color,
   });
 
   final String label;
@@ -19,6 +20,9 @@ class PrimaryButton extends StatelessWidget {
   final bool loading;
   final IconData? icon;
   final bool expand;
+
+  /// Background colour; defaults to the theme's ink.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +32,11 @@ class PrimaryButton extends StatelessWidget {
       loading: loading,
       color: AppColors.onInk,
     );
-    final button = FilledButton(onPressed: loading ? null : onPressed, child: child);
+    final button = FilledButton(
+      onPressed: loading ? null : onPressed,
+      style: color == null ? null : FilledButton.styleFrom(backgroundColor: color),
+      child: child,
+    );
     return expand ? SizedBox(width: double.infinity, child: button) : button;
   }
 }
@@ -43,6 +51,7 @@ class SecondaryButton extends StatelessWidget {
     this.icon,
     this.expand = true,
     this.dashed = false,
+    this.color,
   });
 
   final String label;
@@ -54,12 +63,24 @@ class SecondaryButton extends StatelessWidget {
   /// Dashed outline (e.g. "Import from catalog").
   final bool dashed;
 
+  /// Outline and text colour; defaults to the theme's ink.
+  final Color? color;
+
   @override
   Widget build(BuildContext context) {
-    final child = _ButtonContent(label: label, icon: icon, loading: loading, color: AppColors.ink);
+    final c = color ?? AppColors.ink;
+    final child = _ButtonContent(label: label, icon: icon, loading: loading, color: c);
     Widget button = OutlinedButton(
       onPressed: loading ? null : onPressed,
-      style: dashed ? OutlinedButton.styleFrom(side: BorderSide.none) : null,
+      style: dashed
+          ? OutlinedButton.styleFrom(side: BorderSide.none)
+          : color == null
+          ? null
+          : OutlinedButton.styleFrom(
+              foregroundColor: c,
+              side: BorderSide(color: c, width: 2),
+              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
       child: child,
     );
     if (dashed) {

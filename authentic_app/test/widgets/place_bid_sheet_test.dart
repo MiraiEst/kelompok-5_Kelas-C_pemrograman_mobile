@@ -32,13 +32,13 @@ void main() {
 
   PrimaryButton confirmButton(WidgetTester tester) => tester.widget(find.byType(PrimaryButton));
 
-  testWidgets('shows the minimum and quick-fill chips', (tester) async {
+  testWidgets('shows the minimum and the -/+000/+ step buttons', (tester) async {
     await pumpSheet(tester);
     expect(find.text('Place your maximum bid'), findsOneWidget);
     expect(find.text('Enter Rp 310.000 or more'), findsOneWidget);
-    expect(find.text('Rp 310.000'), findsOneWidget);
-    expect(find.text('Rp 320.000'), findsOneWidget); // + 2 increments
-    expect(find.text('Rp 335.000'), findsOneWidget); // + 5 increments
+    expect(find.text('-5.000'), findsOneWidget);
+    expect(find.text('+000'), findsOneWidget);
+    expect(find.text('+5.000'), findsOneWidget);
     expect(confirmButton(tester).onPressed, isNull);
   });
 
@@ -54,13 +54,35 @@ void main() {
     expect(field.decoration?.errorText, 'Enter Rp 310.000 or more');
   });
 
-  testWidgets('valid amount enables confirm with the amount in the label', (tester) async {
+  testWidgets('+ fills the minimum, then steps up and down by the increment', (tester) async {
     await pumpSheet(tester);
-    await tester.tap(find.text('Rp 335.000'));
+    await tester.tap(find.byKey(const Key('bidStepUp')));
     await tester.pump();
-
-    expect(find.text('Confirm bid · Rp 335.000'), findsOneWidget);
+    expect(find.text('Confirm bid · Rp 310.000'), findsOneWidget);
     expect(confirmButton(tester).onPressed, isNotNull);
+
+    await tester.tap(find.byKey(const Key('bidStepUp')));
+    await tester.pump();
+    expect(find.text('Confirm bid · Rp 315.000'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('bidStepDown')));
+    await tester.pump();
+    expect(find.text('Confirm bid · Rp 310.000'), findsOneWidget);
+  });
+
+  testWidgets('+000 appends three zeros', (tester) async {
+    await pumpSheet(tester);
+    await tester.enterText(find.byKey(const Key('bidAmount')), '320');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('bidTimes1000')));
+    await tester.pump();
+    expect(find.text('Confirm bid · Rp 320.000'), findsOneWidget);
+  });
+
+  test('stepDown removes one increment but never goes under the minimum', () {
+    expect(stepDown(315000, 310000), 310000);
+    expect(stepDown(312000, 310000), 310000);
+    expect(stepDown(510000, 310000), 500000); // 10.000 tier back into the 5.000 tier
   });
 
   test('addIncrements follows the increment table', () {

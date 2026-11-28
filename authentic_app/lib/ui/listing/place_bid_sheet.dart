@@ -20,9 +20,19 @@ Future<void> showPlaceBidSheet(BuildContext context, String listingId) =>
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      barrierColor: AppColors.scrim,
+      barrierColor: const Color(0x42000000),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       builder: (_) => PlaceBidSheet(listingId: listingId),
     );
+
+/// One increment below [amount], never under [minimum].
+int stepDown(int amount, int minimum) {
+  // The increment that was added to reach [amount] comes from the tier below it.
+  final down = amount - bidIncrement(amount - 1);
+  return down < minimum ? minimum : down;
+}
 
 /// `min`, then `min` plus [steps] bid increments (310.000 → 320.000 → 335.000).
 int addIncrements(int min, int steps) {
@@ -121,6 +131,10 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
     final tooLow = amount != null && amount < minimum;
     final valid = amount != null && !tooLow && !ended;
 
+    // Base for the -/+ step buttons: what's typed, else the minimum.
+    final base = amount ?? minimum;
+    final step = bidIncrement(base);
+
     final helper = isLeader
         ? context.l10n.enterMoreThanMax(currentMax.toRupiah())
         : context.l10n.enterOrMore(minimum.toRupiah());
@@ -148,12 +162,8 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
             const SizedBox(height: 16),
             Row(
               children: [
-                ListingImage(
-                  url: l.thumbnail,
-                  size: 56,
-                  borderRadius: BorderRadius.circular(AppRadius.photoSmall),
-                ),
-                const SizedBox(width: 12),
+                PhotoCard(url: l.thumbnail, size: 60),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,16 +172,14 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
                         l.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: AppText.small,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
                       CountdownText(
                         endsAt: l.endsAt,
-                        prefix: context.l10n.currentPriceBids(
-                          l.currentPrice.toRupiah(),
-                          l.bidCount,
-                        ),
-                        suffix: context.l10n.timeLeftSuffix,
+                        prefix:
+                            '${context.l10n.currentPriceBids(l.currentPrice.toRupiah(), l.bidCount)} ',
+                        suffix: ' ${context.l10n.timeLeftSuffix}',
                         style: AppText.caption,
                       ),
                     ],
@@ -184,33 +192,40 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
               header: true,
               child: Text(
                 isLeader ? context.l10n.raiseYourMaxBid : context.l10n.placeYourMaxBid,
-                style: AppText.title,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
               ),
             ),
-            const SizedBox(height: 16),
-            Text(context.l10n.yourMaxBid, style: AppText.fieldLabel),
-            const SizedBox(height: 6),
-            TextField(
-              key: const Key('bidAmount'),
-              controller: _amount,
-              enabled: !ended,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsFormatter()],
-              style: AppText.bidInput,
-              decoration: InputDecoration(
-                prefixText: 'Rp ',
-                prefixStyle: AppText.bidInput.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w400,
+            const SizedBox(height: 12),
+            Semantics(
+              label: context.l10n.yourMaxBid,
+              child: TextField(
+                key: const Key('bidAmount'),
+                controller: _amount,
+                enabled: !ended,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsFormatter()],
+                style: AppText.bidInput.copyWith(fontSize: 24),
+                decoration: InputDecoration(
+                  prefixText: 'Rp  ',
+                  prefixStyle: AppText.bidInput.copyWith(
+                    fontSize: 24,
+                    color: AppColors.navInactive,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  constraints: const BoxConstraints(minHeight: 60),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.input),
+                    borderSide: const BorderSide(color: AppColors.ocean, width: 2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.input),
+                    borderSide: const BorderSide(color: AppColors.ocean, width: 2.5),
+                  ),
+                  helperText: error == null ? helper : null,
+                  errorText: error,
                 ),
-                constraints: const BoxConstraints(minHeight: 56),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.input),
-                  borderSide: const BorderSide(color: AppColors.ink, width: 2),
-                ),
-                helperText: error == null ? helper : null,
-                errorText: error,
               ),
             ),
             if (_outbidMessage != null) ...[
@@ -223,31 +238,46 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
                 ),
               ),
             ],
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            const SizedBox(height: 16),
+            // -increment / append "000" / +increment.
+            Row(
               children: [
-                for (final v in {chipBase, addIncrements(chipBase, 2), addIncrements(chipBase, 5)})
-                  ActionChip(
-                    label: Text(v.toRupiah()),
-                    onPressed: ended ? null : () => _fill(v),
-                    materialTapTargetSize: MaterialTapTargetSize.padded,
-                  ),
+                _StepButton(
+                  key: const Key('bidStepDown'),
+                  label: '-${formatThousands(bidIncrement(base - 1))}',
+                  onPressed: ended || amount == null || amount <= minimum
+                      ? null
+                      : () => _fill(stepDown(amount, minimum)),
+                ),
+                const SizedBox(width: 12),
+                _StepButton(
+                  key: const Key('bidTimes1000'),
+                  label: '+000',
+                  tooltip: context.l10n.addThreeZeros,
+                  onPressed: ended || amount == null || amount > 999999999
+                      ? null
+                      : () => _fill(amount * 1000),
+                ),
+                const SizedBox(width: 12),
+                _StepButton(
+                  key: const Key('bidStepUp'),
+                  label: '+${formatThousands(step)}',
+                  onPressed: ended ? null : () => _fill(amount == null ? chipBase : amount + step),
+                ),
               ],
             ),
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: AppColors.oceanLight,
                 borderRadius: BorderRadius.circular(AppRadius.input),
               ),
               child: Text.rich(
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: context.l10n.howItWorks,
+                      text: '${context.l10n.howItWorks} ',
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     TextSpan(text: context.l10n.howItWorksBody),
@@ -258,8 +288,9 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
             ),
             const SizedBox(height: 12),
             Text.rich(
+              textAlign: TextAlign.center,
               TextSpan(
-                text: context.l10n.agreeToBuy,
+                text: '${context.l10n.agreeToBuy} ',
                 children: [
                   TextSpan(
                     text: context.l10n.bidsBinding,
@@ -283,20 +314,56 @@ class _PlaceBidSheetState extends ConsumerState<PlaceBidSheet> {
                 ),
               ),
             PrimaryButton(
+              color: AppColors.ocean,
               label: valid
                   ? context.l10n.confirmBidAmount(amount.toRupiah())
                   : context.l10n.confirmBid,
               loading: busy,
               onPressed: valid ? () => _confirm(l, amount) : null,
             ),
-            const SizedBox(height: 4),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(context.l10n.cancel),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.softButton,
+                  foregroundColor: AppColors.ink,
+                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(context.l10n.cancel),
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Square-ish outlined quick-amount button ("-25.000", "+000", "+25.000").
+class _StepButton extends StatelessWidget {
+  const _StepButton({super.key, required this.label, required this.onPressed, this.tooltip});
+  final String label;
+  final String? tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(52),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        foregroundColor: AppColors.ink,
+        side: const BorderSide(color: AppColors.oceanMid, width: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
+        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+      ),
+      child: FittedBox(child: Text(label)),
+    );
+    return Expanded(
+      child: tooltip == null ? button : Tooltip(message: tooltip!, child: button),
     );
   }
 }

@@ -1206,6 +1206,17 @@ class AppLocalizationsId extends AppLocalizations {
   String get ratedBuyer => 'Anda sudah menilai pembeli ini. Terima kasih!';
 
   @override
+  String get commentHint => 'Bagaimana barang dan pengirimannya?';
+
+  @override
+  String nStars(int count) {
+    return '$count bintang';
+  }
+
+  @override
+  String get addThreeZeros => 'Tambah tiga angka nol';
+
+  @override
   String get comment => 'Komentar';
 
   @override

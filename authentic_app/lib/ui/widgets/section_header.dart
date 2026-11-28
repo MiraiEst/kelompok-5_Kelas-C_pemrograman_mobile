@@ -104,3 +104,23 @@ class BrandSectionTitle extends StatelessWidget {
     ),
   );
 }
+
+/// App bar for detail screens: ocean bold title, pale back chevron and a
+/// hairline under it (Checkout, Order).
+AppBar brandAppBar(BuildContext context, Widget title) => AppBar(
+  leading: Navigator.of(context).canPop()
+      ? IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.oceanLight),
+          onPressed: () => Navigator.of(context).maybePop(),
+        )
+      : null,
+  title: DefaultTextStyle.merge(
+    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.ocean),
+    child: title,
+  ),
+  bottom: const PreferredSize(
+    preferredSize: Size.fromHeight(1.5),
+    child: Divider(height: 1.5, thickness: 1.5, color: AppColors.line),
+  ),
+);
