@@ -10,10 +10,8 @@ import '../../domain/models/order.dart';
 import '../../providers/providers.dart';
 import '../listing/place_bid_sheet.dart';
 import '../theme/app_theme.dart';
-import '../widgets/buttons.dart';
 import '../widgets/common.dart';
 import '../widgets/section_header.dart';
-import '../widgets/status_pill.dart';
 
 /// Derived lists for the four tabs + the summary strip.
 typedef YourBids = ({
@@ -90,11 +88,22 @@ class _YourBidsScreenState extends ConsumerState<YourBidsScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PageHeading(context.l10n.navYourBids),
+          BrandPageTitle(context.l10n.navYourBids),
           TabBar(
             controller: _tabs,
             isScrollable: true,
             tabAlignment: TabAlignment.start,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            labelPadding: const EdgeInsets.only(right: 28),
+            labelColor: AppColors.brandBright,
+            unselectedLabelColor: AppColors.ink,
+            labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            unselectedLabelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+            indicatorSize: TabBarIndicatorSize.label,
+            indicator: const UnderlineTabIndicator(
+              borderSide: BorderSide(color: AppColors.brandBright, width: 3),
+            ),
+            dividerColor: AppColors.line,
             tabs: [
               Tab(
                 text: d == null
@@ -109,19 +118,20 @@ class _YourBidsScreenState extends ConsumerState<YourBidsScreen>
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _SummaryBox(
                   label: context.l10n.winning,
                   value: d?.winning,
                   onTap: () => _tabs.animateTo(0),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 14),
                 _SummaryBox(
                   label: context.l10n.outbid,
                   value: d?.outbid,
                   onTap: () => _tabs.animateTo(0),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 14),
                 _SummaryBox(
                   label: context.l10n.toPay,
                   value: d == null ? null : toPay,
@@ -175,18 +185,30 @@ class _SummaryBox extends StatelessWidget {
       label: '$label: ${value ?? context.l10n.loading}',
       excludeSemantics: true,
       child: Material(
-        color: AppColors.surface,
+        color: AppColors.brandIcon,
         borderRadius: BorderRadius.circular(AppRadius.input),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadius.input),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${value ?? '–'}', style: AppText.title),
-                Text(label, style: AppText.caption),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 15, color: AppColors.onInk),
+                ),
+                Text(
+                  '${value ?? '–'}',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onInk,
+                  ),
+                ),
               ],
             ),
           ),
@@ -246,7 +268,6 @@ class _BidCard extends StatelessWidget {
     required this.priceLine,
     this.meta,
     this.action,
-    this.emphasised = false,
     this.trailing,
   });
 
@@ -255,7 +276,6 @@ class _BidCard extends StatelessWidget {
   final Widget priceLine;
   final Widget? meta;
   final Widget? action;
-  final bool emphasised;
   final Widget? trailing;
 
   @override
@@ -264,51 +284,44 @@ class _BidCard extends StatelessWidget {
     return Material(
       color: AppColors.background,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        side: BorderSide(
-          color: emphasised ? AppColors.ink : AppColors.line,
-          width: emphasised ? 2 : 1,
-        ),
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.cardBorder, width: 1.5),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => context.push('/listing/${l.id}'),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ListingImage(
-                    url: l.thumbnail,
-                    size: 72,
-                    borderRadius: BorderRadius.circular(AppRadius.photoSmall),
-                  ),
-                  const SizedBox(width: 12),
+                  PhotoCard(url: l.thumbnail, size: 80),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         pill,
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Text(
                           l.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: AppText.small,
+                          style: AppText.body,
                         ),
                         const SizedBox(height: 2),
                         priceLine,
-                        if (meta != null) ...[const SizedBox(height: 2), meta!],
+                        if (meta != null) ...[const SizedBox(height: 6), meta!],
                       ],
                     ),
                   ),
                   ?trailing,
                 ],
               ),
-              if (action != null) ...[const SizedBox(height: 12), action!],
+              if (action != null) ...[const SizedBox(height: 16), action!],
             ],
           ),
         ),
@@ -329,19 +342,18 @@ class _BiddingCard extends ConsumerWidget {
     final leading = l.leaderId == uid;
     return _BidCard(
       listing: l,
-      emphasised: !leading,
       pill: leading
-          ? StatusPill(context.l10n.highestBidder, variant: PillVariant.filled)
-          : StatusPill(context.l10n.outbid, variant: PillVariant.outlined),
+          ? _BidPill(context.l10n.highestBidder, style: _PillStyle.filled)
+          : _BidPill(context.l10n.outbid, style: _PillStyle.outlined),
       priceLine: Text.rich(
         TextSpan(
           text: l.currentPrice.toRupiah(),
-          style: AppText.price,
+          style: _price,
           children: [
             if (myMax != null)
               TextSpan(
-                text: context.l10n.yourMaxSuffix(myMax.toRupiah()),
-                style: AppText.caption.copyWith(fontWeight: FontWeight.w400),
+                text: ' ${context.l10n.yourMaxSuffix(myMax.toRupiah())}',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
               ),
           ],
         ),
@@ -349,14 +361,20 @@ class _BiddingCard extends ConsumerWidget {
       meta: CountdownText(
         endsAt: l.endsAt,
         prefix: context.l10n.endsIn,
-        style: AppText.caption,
+        style: const TextStyle(fontSize: 13, color: AppColors.ink),
         onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),
       ),
       action: leading
           ? null
-          : PrimaryButton(
-              label: context.l10n.raiseMaxBid,
+          : FilledButton(
+              style: _actionStyle.merge(
+                FilledButton.styleFrom(
+                  backgroundColor: AppColors.brandBright,
+                  foregroundColor: AppColors.onInk,
+                ),
+              ),
               onPressed: () => showPlaceBidSheet(context, l.id),
+              child: Text(context.l10n.raiseMaxBid),
             ),
     );
   }
@@ -376,18 +394,18 @@ class _WonCard extends ConsumerWidget {
     return _BidCard(
       listing: l,
       pill: paid
-          ? StatusPill(context.l10n.statusPaid, variant: PillVariant.filled)
+          ? _BidPill(context.l10n.statusPaid, style: _PillStyle.filled)
           : _CountdownPill(until: payBy),
-      priceLine: Text((l.finalPrice ?? l.currentPrice).toRupiah(), style: AppText.price),
+      priceLine: Text((l.finalPrice ?? l.currentPrice).toRupiah(), style: _price),
       // The order is created by a Cloud Function; hide actions until it exists.
       action: order == null || order.status == OrderStatus.cancelled
           ? null
           : paid
-          ? SecondaryButton(
+          ? _OutlinedAction(
               label: context.l10n.trackOrder,
               onPressed: () => context.push('/orders/${order.id}'),
             )
-          : SecondaryButton(
+          : _OutlinedAction(
               label: context.l10n.payNow,
               onPressed: () => context.push('/checkout/${order.id}'),
             ),
@@ -401,17 +419,13 @@ class _CountdownPill extends StatelessWidget {
   final DateTime until;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(
-      color: AppColors.soft,
-      borderRadius: BorderRadius.circular(AppRadius.pill),
-    ),
+  Widget build(BuildContext context) => _PillBox(
+    style: _PillStyle.soft,
     child: CountdownText(
       endsAt: until,
       prefix: 'WON · PAY IN ',
       format: (d) => d.toShort().toUpperCase(),
-      style: AppText.pill.copyWith(color: AppColors.ink),
+      style: _PillStyle.soft.text,
     ),
   );
 }
@@ -428,10 +442,10 @@ class _LostCard extends StatelessWidget {
     const Widget? secondChance = null;
     return _BidCard(
       listing: l,
-      pill: StatusPill(context.l10n.endedLabel),
+      pill: _BidPill(context.l10n.endedLabel, style: _PillStyle.soft),
       priceLine: Text(
         context.l10n.finalAmount((l.finalPrice ?? l.currentPrice).toRupiah()),
-        style: AppText.price,
+        style: _price,
       ),
       action: secondChance,
     );
@@ -484,22 +498,101 @@ class _WatchCard extends ConsumerWidget {
     final uid = ref.watch(authStateProvider).value?.uid;
     return _BidCard(
       listing: l,
-      pill: StatusPill(l.isLive(DateTime.now()) ? context.l10n.watching : context.l10n.endedLabel),
-      priceLine: Text(l.currentPrice.toRupiah(), style: AppText.price),
+      pill: _BidPill(
+        l.isLive(DateTime.now()) ? context.l10n.watching : context.l10n.endedLabel,
+        style: _PillStyle.soft,
+      ),
+      priceLine: Text(l.currentPrice.toRupiah(), style: _price),
       meta: l.isActive
           ? CountdownText(
               endsAt: l.endsAt,
-              suffix: context.l10n.timeLeftSuffix,
+              suffix: ' ${context.l10n.timeLeftSuffix}',
               format: (d) => d.toShort(),
-              style: AppText.caption,
+              style: const TextStyle(fontSize: 13, color: AppColors.ink),
               onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),
             )
           : null,
       trailing: IconButton(
         tooltip: context.l10n.removeFromWatchlist,
-        icon: const Icon(Icons.favorite),
+        icon: const Icon(Icons.favorite, color: AppColors.brand),
         onPressed: uid == null ? null : () => ref.read(userRepositoryProvider).toggleWatch(uid, l),
       ),
     );
   }
+}
+
+const _price = TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink);
+
+/// Rounded-rectangle buttons inside bid cards (height 48, radius 8).
+final _actionStyle = ButtonStyle(
+  minimumSize: const WidgetStatePropertyAll(Size.fromHeight(48)),
+  shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+  textStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+);
+
+/// Teal outlined action ("Pay now", "Track order").
+class _OutlinedAction extends StatelessWidget {
+  const _OutlinedAction({required this.label, required this.onPressed});
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => OutlinedButton(
+    style: _actionStyle.merge(
+      OutlinedButton.styleFrom(
+        foregroundColor: AppColors.brand,
+        side: const BorderSide(color: AppColors.brand, width: 2),
+      ),
+    ),
+    onPressed: onPressed,
+    child: Text(label),
+  );
+}
+
+enum _PillStyle {
+  /// "HIGHEST BIDDER", "PAID": teal with white text.
+  filled(AppColors.brand, AppColors.brand, AppColors.onInk),
+
+  /// "OUTBID": teal outline.
+  outlined(AppColors.background, AppColors.brand, AppColors.brand),
+
+  /// "WON · PAY IN 3D 23H", "ENDED", "WATCHING": soft teal-grey.
+  soft(AppColors.cardBorder, AppColors.cardBorder, AppColors.brand);
+
+  const _PillStyle(this.background, this.border, this.foreground);
+  final Color background;
+  final Color border;
+  final Color foreground;
+
+  TextStyle get text =>
+      TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.2, color: foreground);
+}
+
+class _PillBox extends StatelessWidget {
+  const _PillBox({required this.style, required this.child});
+  final _PillStyle style;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+    decoration: BoxDecoration(
+      color: style.background,
+      border: Border.all(color: style.border, width: 1.5),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: child,
+  );
+}
+
+class _BidPill extends StatelessWidget {
+  const _BidPill(this.label, {required this.style});
+  final String label;
+  final _PillStyle style;
+
+  @override
+  Widget build(BuildContext context) => _PillBox(
+    style: style,
+    child: Text(label.toUpperCase(), style: style.text),
+  );
 }

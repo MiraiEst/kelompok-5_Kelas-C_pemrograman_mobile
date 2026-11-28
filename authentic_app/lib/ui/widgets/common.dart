@@ -260,3 +260,21 @@ void showSnack(BuildContext context, String message, {SnackBarAction? action}) {
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(message), action: action));
 }
+
+/// Square product photo on a white rounded card with a soft shadow.
+class PhotoCard extends StatelessWidget {
+  const PhotoCard({super.key, required this.url, required this.size, this.radius = 10});
+  final String? url;
+  final double size;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: AppColors.background,
+      borderRadius: BorderRadius.circular(radius),
+      boxShadow: const [BoxShadow(color: Color(0x29000000), blurRadius: 4, offset: Offset(0, 2))],
+    ),
+    child: ListingImage(url: url, size: size, borderRadius: BorderRadius.circular(radius)),
+  );
+}

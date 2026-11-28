@@ -379,7 +379,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get editProfile => 'Ubah profil';
 
   @override
-  String get verified => 'Terverifikasi';
+  String get verified => 'Pengguna terverifikasi';
 
   @override
   String memberSince(int year) {

@@ -55,8 +55,11 @@ abstract final class AppColors {
   /// Bright cyan: countdown badges, active tab indicator.
   static const brandBright = Color(0xFF00ACEB);
 
-  /// Light cyan for icons sitting on [brandTint].
+  /// Light cyan: page titles, summary boxes, icons sitting on [brandTint].
   static const brandIcon = Color(0xFF1DC3FF);
+
+  /// Soft teal-grey borders of cards and stat boxes; also the "won" pill.
+  static const cardBorder = Color(0xFFCDE1E7);
 
   /// Pale cyan header background.
   static const brandTint = Color(0xFFDEFAFF);

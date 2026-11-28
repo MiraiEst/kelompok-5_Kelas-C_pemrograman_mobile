@@ -792,7 +792,7 @@ abstract class AppLocalizations {
   /// No description provided for @verified.
   ///
   /// In en, this message translates to:
-  /// **'Verified'**
+  /// **'Verified user'**
   String get verified;
 
   /// No description provided for @memberSince.

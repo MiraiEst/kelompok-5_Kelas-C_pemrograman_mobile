@@ -186,7 +186,7 @@
   "helpTermsPrivacy": "Help, terms & privacy",
   "deleteAccount": "Delete account",
   "editProfile": "Edit profile",
-  "verified": "Verified",
+  "verified": "Verified user",
   "memberSince": "Member since {year}",
   "@memberSince": {
     "placeholders": {

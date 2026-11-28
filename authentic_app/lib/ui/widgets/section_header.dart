@@ -67,3 +67,40 @@ class PageHeading extends StatelessWidget {
     ),
   );
 }
+
+/// Big cyan page title at the top of a tab ("Trending", "Your bids").
+class BrandPageTitle extends StatelessWidget {
+  const BrandPageTitle(this.text, {super.key});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+    child: Semantics(
+      header: true,
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w700,
+          color: AppColors.brandIcon,
+        ),
+      ),
+    ),
+  );
+}
+
+/// Bold teal section title ("Hot categories").
+class BrandSectionTitle extends StatelessWidget {
+  const BrandSectionTitle(this.text, {super.key});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    header: true,
+    child: Text(
+      text,
+      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.brand),
+    ),
+  );
+}

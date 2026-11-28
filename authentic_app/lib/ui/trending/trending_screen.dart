@@ -10,7 +10,6 @@ import '../../providers/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/section_header.dart';
-import '../widgets/segmented_tabs.dart';
 
 /// Trending tab: ranked lists by bids / watchers / new, plus hot categories.
 class TrendingScreen extends ConsumerWidget {
@@ -30,13 +29,11 @@ class TrendingScreen extends ConsumerWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverToBoxAdapter(
-              child: PageHeading(context.l10n.navTrending, subtitle: context.l10n.trendingSubtitle),
-            ),
+            SliverToBoxAdapter(child: BrandPageTitle(context.l10n.navTrending)),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: SegmentedTabs<TrendingSort>(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: _PillSegments<TrendingSort>(
                   values: TrendingSort.values,
                   selected: sort,
                   label: (s) => switch (s) {
@@ -84,8 +81,8 @@ class TrendingScreen extends ConsumerWidget {
             },
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                child: SectionHeader(context.l10n.hotCategories),
+                padding: const EdgeInsets.fromLTRB(16, 28, 16, 16),
+                child: BrandSectionTitle(context.l10n.hotCategories),
               ),
             ),
             const _HotCategories(),
@@ -114,31 +111,22 @@ class _RankRow extends ConsumerWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: () => context.push('/listing/${l.id}'),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 84),
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: AppColors.line)),
-          ),
           child: Row(
             children: [
               SizedBox(
-                width: 24,
+                width: 28,
                 child: Text(
                   '$rank',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 22,
                     fontWeight: FontWeight.w700,
                     color: rank <= 3 ? AppColors.ink : AppColors.muted,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              ListingImage(
-                url: l.thumbnail,
-                size: 64,
-                borderRadius: BorderRadius.circular(AppRadius.photoSmall),
-              ),
+              PhotoCard(url: l.thumbnail, size: 90),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -148,17 +136,20 @@ class _RankRow extends ConsumerWidget {
                       l.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppText.small,
+                      style: AppText.body,
                     ),
-                    const SizedBox(height: 2),
-                    Text(l.currentPrice.toRupiah(), style: AppText.price),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 6),
+                    Text(
+                      l.currentPrice.toRupiah(),
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 6),
                     CountdownText(
                       endsAt: l.endsAt,
-                      prefix: context.l10n.bidsWatchingPrefix(l.bidCount, l.watcherCount),
-                      suffix: context.l10n.timeLeftSuffix,
+                      prefix: '${context.l10n.bidsWatchingPrefix(l.bidCount, l.watcherCount)} ',
+                      suffix: ' ${context.l10n.timeLeftSuffix}',
                       format: (d) => d.toShort(),
-                      style: AppText.caption,
+                      style: const TextStyle(fontSize: 13, color: AppColors.ink),
                       onFinished: () => ref.read(auctionCloserProvider).ensureClosed(l),
                     ),
                   ],
@@ -166,7 +157,14 @@ class _RankRow extends ConsumerWidget {
               ),
               if (recent > 0) ...[
                 const SizedBox(width: 8),
-                Text('+$recent', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                Text(
+                  '$recent+',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.brand,
+                  ),
+                ),
               ],
             ],
           ),
@@ -197,7 +195,7 @@ class _HotCategories extends ConsumerWidget {
             crossAxisCount: 2,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            mainAxisExtent: 64 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 2),
+            mainAxisExtent: 68 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 2),
           ),
           itemCount: value.length,
           itemBuilder: (_, i) {
@@ -214,19 +212,15 @@ class _HotCategories extends ConsumerWidget {
                   context.go('/home');
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.line),
+                    border: Border.all(color: AppColors.cardBorder, width: 1.5),
                     borderRadius: BorderRadius.circular(AppRadius.card),
                   ),
                   child: Row(
                     children: [
-                      ListingImage(
-                        url: c.image,
-                        size: 40,
-                        borderRadius: BorderRadius.circular(AppRadius.photoSmall),
-                      ),
-                      const SizedBox(width: 10),
+                      PhotoCard(url: c.image, size: 46, radius: 6),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -236,9 +230,12 @@ class _HotCategories extends ConsumerWidget {
                               name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                             ),
-                            Text(context.l10n.liveCount(c.count), style: AppText.caption),
+                            Text(
+                              context.l10n.liveCount(c.count),
+                              style: const TextStyle(fontSize: 13, color: AppColors.ink),
+                            ),
                           ],
                         ),
                       ),
@@ -254,4 +251,61 @@ class _HotCategories extends ConsumerWidget {
       _ => const SliverToBoxAdapter(child: SizedBox(height: 64)),
     };
   }
+}
+
+/// Pill-shaped segmented control: grey outline, selected segment filled cyan.
+class _PillSegments<T> extends StatelessWidget {
+  const _PillSegments({
+    required this.values,
+    required this.selected,
+    required this.label,
+    required this.onChanged,
+  });
+
+  final List<T> values;
+  final T selected;
+  final String Function(T) label;
+  final ValueChanged<T> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      border: Border.all(color: AppColors.line, width: 1.5),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+    ),
+    child: Row(
+      children: [
+        for (final v in values)
+          Expanded(
+            child: Semantics(
+              button: true,
+              selected: v == selected,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                onTap: () => onChanged(v),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  constraints: const BoxConstraints(minHeight: AppSizes.touchTarget),
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: v == selected ? AppColors.brandBright : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    label(v),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: v == selected ? AppColors.onInk : AppColors.ink,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
 }

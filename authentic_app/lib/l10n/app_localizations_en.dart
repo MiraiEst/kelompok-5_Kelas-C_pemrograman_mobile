@@ -377,7 +377,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editProfile => 'Edit profile';
 
   @override
-  String get verified => 'Verified';
+  String get verified => 'Verified user';
 
   @override
   String memberSince(int year) {

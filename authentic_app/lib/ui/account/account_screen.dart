@@ -13,8 +13,6 @@ import '../../data/repositories/user_repository.dart';
 import '../../providers/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
-import '../widgets/section_header.dart';
-import '../widgets/status_pill.dart';
 import '../widgets/user_avatar.dart';
 
 /// Account tab: profile header, stats, and Selling / Buying / Settings menus.
@@ -166,12 +164,11 @@ class AccountScreen extends ConsumerWidget {
         children: [
           // --- Header ---------------------------------------------------------
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+            padding: const EdgeInsets.fromLTRB(16, 32, 16, 8),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                UserAvatar(name: user.displayName, photoUrl: user.photoUrl, size: 64),
-                const SizedBox(width: 14),
+                UserAvatar(name: user.displayName, photoUrl: user.photoUrl, size: 80),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,25 +178,31 @@ class AccountScreen extends ConsumerWidget {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(user.displayName, style: AppText.profileName),
-                          if (verified)
-                            StatusPill(context.l10n.verified, variant: PillVariant.outlined),
+                          if (verified) _VerifiedPill(context.l10n.verified),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         user.ratingCount == 0
                             ? context.l10n.noRatingsYet
                             : context.l10n.ratingSummary(user.positivePct, user.ratingCount),
-                        style: AppText.meta,
+                        style: _headerMeta,
                       ),
-                      if (user.createdAt != null)
-                        Text(context.l10n.memberSince(user.createdAt!.year), style: AppText.meta),
+                      if (user.createdAt != null) ...[
+                        const SizedBox(height: 6),
+                        Text(context.l10n.memberSince(user.createdAt!.year), style: _headerMeta),
+                      ],
                     ],
                   ),
                 ),
                 IconButton(
                   tooltip: context.l10n.editProfile,
-                  icon: const Icon(Icons.edit_outlined),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.line,
+                    foregroundColor: AppColors.body,
+                    fixedSize: const Size(36, 36),
+                  ),
+                  icon: const Icon(Icons.edit_outlined, size: 18),
                   onPressed: () => context.push('/account/edit'),
                 ),
               ],
@@ -207,10 +210,10 @@ class AccountScreen extends ConsumerWidget {
           ),
           // --- Stats ------------------------------------------------------------
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Container(
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.line),
+                border: Border.all(color: AppColors.cardBorder, width: 1.5),
                 borderRadius: BorderRadius.circular(AppRadius.card),
               ),
               child: IntrinsicHeight(
@@ -221,13 +224,13 @@ class AccountScreen extends ConsumerWidget {
                       value: active,
                       onTap: () => context.push('/account/listings?filter=active'),
                     ),
-                    const VerticalDivider(width: 1),
+                    const VerticalDivider(width: 1.5, thickness: 1.5, color: AppColors.cardBorder),
                     _Stat(
                       label: context.l10n.sold,
                       value: sold,
                       onTap: () => context.push('/account/listings?filter=sold'),
                     ),
-                    const VerticalDivider(width: 1),
+                    const VerticalDivider(width: 1.5, thickness: 1.5, color: AppColors.cardBorder),
                     _Stat(
                       label: context.l10n.purchases,
                       value: purchases.length,
@@ -239,7 +242,7 @@ class AccountScreen extends ConsumerWidget {
             ),
           ),
           // --- Menus --------------------------------------------------------------
-          GroupLabel(context.l10n.selling),
+          _Group(context.l10n.selling),
           _MenuRow(
             label: context.l10n.myListings,
             value: context.l10n.activeCount(active),
@@ -255,13 +258,13 @@ class AccountScreen extends ConsumerWidget {
             value: payout?.masked ?? context.l10n.notSet,
             onTap: () => context.push('/account/payout'),
           ),
-          GroupLabel(context.l10n.buying),
+          _Group(context.l10n.buying),
           _MenuRow(
             label: context.l10n.purchasesAndOrders,
             onTap: () => context.push('/account/orders?mode=purchases'),
           ),
           _MenuRow(label: context.l10n.addresses, onTap: () => context.push('/addresses')),
-          GroupLabel(context.l10n.settings),
+          _Group(context.l10n.settings),
           _MenuRow(
             label: context.l10n.notificationSettings,
             onTap: () => context.push('/account/notifications'),
@@ -320,8 +323,9 @@ class _Stat extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14),
           child: Column(
             children: [
-              Text('$value', style: AppText.title),
-              Text(label, style: AppText.caption),
+              Text('$value', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(label, style: const TextStyle(fontSize: 13, color: AppColors.body)),
             ],
           ),
         ),
@@ -330,7 +334,51 @@ class _Stat extends StatelessWidget {
   );
 }
 
-/// Menu row: height 48, thin bottom line, value + chevron on the right.
+/// Name-block meta lines ("98% positive · 124 ratings").
+const _headerMeta = TextStyle(fontSize: 14, color: AppColors.ink);
+
+/// Teal outlined "VERIFIED USER" pill.
+class _VerifiedPill extends StatelessWidget {
+  const _VerifiedPill(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+    decoration: BoxDecoration(
+      border: Border.all(color: AppColors.brand, width: 1.5),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+    ),
+    child: Text(
+      label.toUpperCase(),
+      style: AppText.pill.copyWith(color: AppColors.brand, letterSpacing: 0),
+    ),
+  );
+}
+
+/// Bold cyan group title ("SELLING", "BUYING", "SETTINGS").
+class _Group extends StatelessWidget {
+  const _Group(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 28, 16, 4),
+    child: Semantics(
+      header: true,
+      child: Text(
+        text.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: AppColors.brandBright,
+        ),
+      ),
+    ),
+  );
+}
+
+/// Menu row: height 56, full-width bottom line, grey value + chevron on the right.
 class _MenuRow extends StatelessWidget {
   const _MenuRow({
     required this.label,
@@ -353,10 +401,10 @@ class _MenuRow extends StatelessWidget {
     child: InkWell(
       onTap: onTap,
       child: Container(
-        constraints: const BoxConstraints(minHeight: 48),
-        margin: const EdgeInsets.symmetric(horizontal: 16),
+        constraints: const BoxConstraints(minHeight: 56),
+        padding: const EdgeInsets.only(left: 16, right: 12),
         decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.line)),
+          border: Border(bottom: BorderSide(color: AppColors.line, width: 1.5)),
         ),
         child: Row(
           children: [
@@ -364,13 +412,14 @@ class _MenuRow extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
                 ),
               ),
             ),
-            if (value != null) Text(value!, style: AppText.meta),
-            if (chevron) const Icon(Icons.chevron_right, color: AppColors.muted),
+            if (value != null)
+              Text(value!, style: const TextStyle(fontSize: 14, color: AppColors.navInactive)),
+            if (chevron) const Icon(Icons.chevron_right, color: AppColors.navInactive),
           ],
         ),
       ),
