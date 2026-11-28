@@ -17,6 +17,7 @@ import '../widgets/common.dart';
 import '../widgets/section_header.dart';
 import '../widgets/user_avatar.dart';
 import 'place_bid_sheet.dart';
+import '../../domain/models/item_category.dart';
 
 /// "Sun 22 Nov, 18:30" in the device time zone.
 DateFormat get endDateFormat => DateFormat('EEE d MMM, HH:mm');
@@ -56,8 +57,7 @@ class _Detail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = listing;
-    final categories = ref.watch(categoriesProvider).value ?? const [];
-    final category = categories.where((c) => c.slug == l.category).firstOrNull?.name ?? l.category;
+    final category = ItemCategory.parse(l.category).text(context);
     final meta = [
       l.condition.text(context),
       category,

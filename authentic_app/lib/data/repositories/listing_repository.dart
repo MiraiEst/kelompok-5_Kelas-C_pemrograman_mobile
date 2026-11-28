@@ -45,14 +45,15 @@ class ListingRepository {
       .map((list) => list..sort((a, b) => a.endsAt.compareTo(b.endsAt)));
 
   /// Home feed page: active auctions ending soonest first, optionally in one
-  /// category. Paging grows [limit] (20, 40, 60…) on a live query, so prices
-  /// and bid counts on screen stay up to date.
-  Stream<List<Listing>> watchActivePage({String? category, required int limit}) {
+  /// category ([categorySlugs]: the category's slug plus its legacy slugs).
+  /// Paging grows [limit] (20, 40, 60…) on a live query, so prices and bid
+  /// counts on screen stay up to date.
+  Stream<List<Listing>> watchActivePage({List<String>? categorySlugs, required int limit}) {
     Query<Map<String, dynamic>> q = _listings.where(
       'status',
       isEqualTo: ListingStatus.active.value,
     );
-    if (category != null) q = q.where('category', isEqualTo: category);
+    if (categorySlugs != null) q = q.where('category', whereIn: categorySlugs);
     return q.orderBy('endsAt').limit(limit).snapshots().map(_map);
   }
 

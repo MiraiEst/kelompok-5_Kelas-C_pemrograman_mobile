@@ -181,6 +181,27 @@ class AppLocalizationsId extends AppLocalizations {
   String get endingSoon => 'Segera berakhir';
 
   @override
+  String get catElectronics => 'Elektronik';
+
+  @override
+  String get catFashion => 'Fashion';
+
+  @override
+  String get catAntique => 'Antique';
+
+  @override
+  String get catHobbiesToys => 'Hobi dan Mainan';
+
+  @override
+  String get catHome => 'Rumah';
+
+  @override
+  String get catAutomotive => 'Otomotif';
+
+  @override
+  String get catOther => 'Lainnya';
+
+  @override
   String get hotDeals => 'Penawaran panas';
 
   @override

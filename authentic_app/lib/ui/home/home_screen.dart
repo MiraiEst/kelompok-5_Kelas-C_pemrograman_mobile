@@ -9,6 +9,8 @@ import '../../providers/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auction_cards.dart';
 import '../widgets/common.dart';
+import '../../domain/models/item_category.dart';
+import '../../l10n/labels.dart';
 
 /// Home tab: search, categories, "Ending soon" and the paged auction grid.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -243,7 +245,6 @@ class _CategoryChips extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(homeFilterProvider.select((f) => f.category));
-    final cats = ref.watch(categoriesProvider).value ?? const [];
     final filter = ref.read(homeFilterProvider.notifier);
 
     Widget chip(String label, String? slug) => Padding(
@@ -273,7 +274,10 @@ class _CategoryChips extends ConsumerWidget {
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [chip(context.l10n.all, null), for (final c in cats) chip(c.name, c.slug)],
+        children: [
+          chip(context.l10n.all, null),
+          for (final c in ItemCategory.values) chip(c.text(context), c.slug),
+        ],
       ),
     );
   }

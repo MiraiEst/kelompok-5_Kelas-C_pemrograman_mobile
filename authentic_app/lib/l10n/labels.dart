@@ -5,6 +5,7 @@ import '../core/extensions.dart';
 import '../data/services/courier_rate_service.dart';
 import '../domain/bidding/proxy_engine.dart';
 import '../domain/models/app_user.dart';
+import '../domain/models/item_category.dart';
 import '../domain/models/listing.dart';
 import '../domain/models/order.dart';
 import '../ui/sell/sell_validation.dart';
@@ -36,6 +37,21 @@ extension ListingStatusL10n on ListingStatus {
       ListingStatus.sold => l.listingSold,
       ListingStatus.unsold => l.listingUnsold,
       ListingStatus.ended => l.listingEnded,
+    };
+  }
+}
+
+extension ItemCategoryL10n on ItemCategory {
+  String text(BuildContext context) {
+    final l = context.l10n;
+    return switch (this) {
+      ItemCategory.electronics => l.catElectronics,
+      ItemCategory.fashion => l.catFashion,
+      ItemCategory.antique => l.catAntique,
+      ItemCategory.hobbiesToys => l.catHobbiesToys,
+      ItemCategory.home => l.catHome,
+      ItemCategory.automotive => l.catAutomotive,
+      ItemCategory.other => l.catOther,
     };
   }
 }

@@ -22,6 +22,7 @@ import '../domain/models/listing.dart';
 import '../domain/models/order.dart';
 import '../domain/models/payout_account.dart';
 import '../domain/models/public_profile.dart';
+import '../domain/models/item_category.dart';
 
 // =============================================================================
 // State management: Riverpod.
@@ -234,15 +235,6 @@ final watchlistIdsProvider = StreamProvider<Set<String>>((ref) {
 
 // --- Open-source APIs ------------------------------------------------------------
 
-final categoriesProvider = FutureProvider<List<CatalogCategory>>((ref) async {
-  try {
-    final list = await ref.watch(catalogApiProvider).categories();
-    return list.isEmpty ? CatalogApi.fallbackCategories : list;
-  } catch (_) {
-    return CatalogApi.fallbackCategories; // offline-friendly
-  }
-});
-
 final catalogSearchProvider = FutureProvider.autoDispose.family<List<CatalogProduct>, String>(
   (ref, query) => ref.watch(catalogApiProvider).search(query),
 );
@@ -293,7 +285,10 @@ final homeFeedProvider = StreamProvider<({List<Listing> items, bool hasMore})>((
   final limit = ref.watch(homeFeedLimitProvider);
   return ref
       .watch(listingRepositoryProvider)
-      .watchActivePage(category: category, limit: limit)
+      .watchActivePage(
+        categorySlugs: category == null ? null : ItemCategory.parse(category).matchingSlugs,
+        limit: limit,
+      )
       .map((list) => (items: list, hasMore: list.length >= limit));
 });
 
@@ -338,8 +333,10 @@ final hotCategoriesProvider = Provider<AsyncValue<List<({String slug, int count,
     final now = DateTime.now();
     final counts = <String, ({int count, String? image})>{};
     for (final l in list.where((l) => l.isLive(now))) {
-      final prev = counts[l.category];
-      counts[l.category] = (count: (prev?.count ?? 0) + 1, image: prev?.image ?? l.thumbnail);
+      // Group old DummyJSON slugs under the new categories.
+      final slug = ItemCategory.parse(l.category).slug;
+      final prev = counts[slug];
+      counts[slug] = (count: (prev?.count ?? 0) + 1, image: prev?.image ?? l.thumbnail);
     }
     final sorted = counts.entries.toList()..sort((a, b) => b.value.count.compareTo(a.value.count));
     return [

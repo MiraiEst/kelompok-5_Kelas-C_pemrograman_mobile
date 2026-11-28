@@ -180,6 +180,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get endingSoon => 'Ending soon';
 
   @override
+  String get catElectronics => 'Electronics';
+
+  @override
+  String get catFashion => 'Fashion';
+
+  @override
+  String get catAntique => 'Antique';
+
+  @override
+  String get catHobbiesToys => 'Hobbies & Toys';
+
+  @override
+  String get catHome => 'Home';
+
+  @override
+  String get catAutomotive => 'Automotive';
+
+  @override
+  String get catOther => 'Other';
+
+  @override
   String get hotDeals => 'Hot deals';
 
   @override

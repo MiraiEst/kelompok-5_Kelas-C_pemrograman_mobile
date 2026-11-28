@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:imagi_auction/data/api/catalog_api.dart';
 import 'package:imagi_auction/domain/models/listing.dart';
 import 'package:imagi_auction/providers/providers.dart';
 import 'package:imagi_auction/ui/home/home_screen.dart';
@@ -21,7 +20,6 @@ void main() {
     authStateProvider.overrideWith((ref) => Stream<User?>.value(null)),
     homeFeedProvider.overrideWith((ref) => Stream.value((items: feed ?? listings, hasMore: false))),
     endingSoonProvider.overrideWith((ref) => Stream.value(listings)),
-    categoriesProvider.overrideWith((ref) async => CatalogApi.fallbackCategories),
     unreadCountProvider.overrideWithValue(3),
   ];
 

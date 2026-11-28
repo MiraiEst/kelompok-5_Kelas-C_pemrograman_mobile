@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/l10n.dart';
 import '../../providers/providers.dart';
 import '../widgets/common.dart';
+import '../../domain/models/item_category.dart';
+import '../../l10n/labels.dart';
 
 /// Search the open-source DummyJSON product catalog and pick a template.
 class CatalogImportSheet extends ConsumerStatefulWidget {
@@ -67,7 +69,10 @@ class _CatalogImportSheetState extends ConsumerState<CatalogImportSheet> {
                               child: ListingImage(url: p.thumbnail, size: 48),
                             ),
                             title: Text(p.title),
-                            subtitle: Text('${p.category} · \$${p.priceUsd.toStringAsFixed(2)}'),
+                            subtitle: Text(
+                              '${ItemCategory.parse(p.category).text(context)} · '
+                              '\$${p.priceUsd.toStringAsFixed(2)}',
+                            ),
                             onTap: () => Navigator.pop(context, p),
                           );
                         },

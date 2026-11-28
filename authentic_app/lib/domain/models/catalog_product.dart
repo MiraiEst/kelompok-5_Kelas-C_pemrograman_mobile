@@ -29,20 +29,3 @@ class CatalogProduct {
     images: List<String>.from(j['images'] as List? ?? const []),
   );
 }
-
-class CatalogCategory {
-  const CatalogCategory({required this.slug, required this.name});
-  final String slug;
-  final String name;
-
-  /// DummyJSON returns objects `{slug, name, url}`; older versions returned
-  /// plain strings. Pattern matching handles both shapes.
-  static CatalogCategory? tryParse(Object? raw) => switch (raw) {
-    {'slug': final String slug, 'name': final String name} => CatalogCategory(
-      slug: slug,
-      name: name,
-    ),
-    final String s => CatalogCategory(slug: s, name: s),
-    _ => null,
-  };
-}

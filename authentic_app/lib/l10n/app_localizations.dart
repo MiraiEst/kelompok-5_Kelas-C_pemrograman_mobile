@@ -423,6 +423,48 @@ abstract class AppLocalizations {
   /// **'Ending soon'**
   String get endingSoon;
 
+  /// No description provided for @catElectronics.
+  ///
+  /// In en, this message translates to:
+  /// **'Electronics'**
+  String get catElectronics;
+
+  /// No description provided for @catFashion.
+  ///
+  /// In en, this message translates to:
+  /// **'Fashion'**
+  String get catFashion;
+
+  /// No description provided for @catAntique.
+  ///
+  /// In en, this message translates to:
+  /// **'Antique'**
+  String get catAntique;
+
+  /// No description provided for @catHobbiesToys.
+  ///
+  /// In en, this message translates to:
+  /// **'Hobbies & Toys'**
+  String get catHobbiesToys;
+
+  /// No description provided for @catHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get catHome;
+
+  /// No description provided for @catAutomotive.
+  ///
+  /// In en, this message translates to:
+  /// **'Automotive'**
+  String get catAutomotive;
+
+  /// No description provided for @catOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get catOther;
+
   /// No description provided for @hotDeals.
   ///
   /// In en, this message translates to:

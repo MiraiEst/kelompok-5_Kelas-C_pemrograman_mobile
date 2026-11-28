@@ -10,6 +10,8 @@ import '../../providers/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/section_header.dart';
+import '../../domain/models/item_category.dart';
+import '../../l10n/labels.dart';
 
 /// Trending tab: ranked lists by bids / watchers / new, plus hot categories.
 class TrendingScreen extends ConsumerWidget {
@@ -180,7 +182,6 @@ class _HotCategories extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hot = ref.watch(hotCategoriesProvider);
-    final names = {for (final c in ref.watch(categoriesProvider).value ?? const []) c.slug: c.name};
     return switch (hot) {
       AsyncValue(:final value?) when value.isEmpty => SliverToBoxAdapter(
         child: Padding(
@@ -200,7 +201,7 @@ class _HotCategories extends ConsumerWidget {
           itemCount: value.length,
           itemBuilder: (_, i) {
             final c = value[i];
-            final name = names[c.slug] ?? c.slug;
+            final name = ItemCategory.parse(c.slug).text(context);
             return Semantics(
               button: true,
               label: '$name, ${context.l10n.liveCount(c.count)}',

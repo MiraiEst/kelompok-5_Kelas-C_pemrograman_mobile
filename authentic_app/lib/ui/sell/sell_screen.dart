@@ -20,6 +20,7 @@ import '../widgets/section_header.dart';
 import '../widgets/segmented_tabs.dart';
 import 'catalog_import_sheet.dart';
 import 'sell_validation.dart';
+import '../../domain/models/item_category.dart';
 
 /// A photo in the form: picked on this device, or already online.
 sealed class SellPhoto {
@@ -149,7 +150,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
       _listingId = id;
       _title.text = d['title'] as String? ?? '';
       _description.text = d['description'] as String? ?? '';
-      _category = d['category'] as String?;
+      _category = ItemCategory.tryParse(d['category'])?.slug;
       _condition = ItemCondition.parse(d['condition']);
       _format = ListingFormat.parse(d['format']);
       _start.text = money(d['startPrice']);
@@ -314,7 +315,7 @@ class _SellScreenState extends ConsumerState<SellScreen> {
     setState(() {
       _title.text = product.title.length > 80 ? product.title.substring(0, 80) : product.title;
       _description.text = product.description;
-      _category = product.category;
+      _category = ItemCategory.parse(product.category).slug;
       _photos.addAll(images.take(AppConfig.maxPhotos - _photos.length).map((u) => RemotePhoto(u)));
     });
 
@@ -435,11 +436,6 @@ class _SellScreenState extends ConsumerState<SellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = ref.watch(categoriesProvider).value ?? const [];
-    final categoryItems = <String, String>{
-      for (final c in categories) c.slug: c.name,
-      if (_category != null && !categories.any((c) => c.slug == _category)) _category!: _category!,
-    };
     final start = parseMoney(_start.text);
     final reserve = parseMoney(_reserve.text);
     final buyNow = parseMoney(_buyNow.text);
@@ -530,8 +526,8 @@ class _SellScreenState extends ConsumerState<SellScreen> {
                     isExpanded: true,
                     hint: Text(context.l10n.chooseCategory),
                     items: [
-                      for (final e in categoryItems.entries)
-                        DropdownMenuItem(value: e.key, child: Text(e.value)),
+                      for (final c in ItemCategory.values)
+                        DropdownMenuItem(value: c.slug, child: Text(c.text(context))),
                     ],
                     onChanged: (v) => setState(() {
                       _category = v;
