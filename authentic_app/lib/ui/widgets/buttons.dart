@@ -52,6 +52,7 @@ class SecondaryButton extends StatelessWidget {
     this.expand = true,
     this.dashed = false,
     this.color,
+    this.leading,
   });
 
   final String label;
@@ -66,10 +67,19 @@ class SecondaryButton extends StatelessWidget {
   /// Outline and text colour; defaults to the theme's ink.
   final Color? color;
 
+  /// Widget before the label instead of [icon] (e.g. the Google logo).
+  final Widget? leading;
+
   @override
   Widget build(BuildContext context) {
     final c = color ?? AppColors.ink;
-    final child = _ButtonContent(label: label, icon: icon, loading: loading, color: c);
+    final child = _ButtonContent(
+      label: label,
+      icon: icon,
+      leading: leading,
+      loading: loading,
+      color: c,
+    );
     Widget button = OutlinedButton(
       onPressed: loading ? null : onPressed,
       style: dashed
@@ -99,11 +109,13 @@ class _ButtonContent extends StatelessWidget {
     required this.icon,
     required this.loading,
     required this.color,
+    this.leading,
   });
   final String label;
   final IconData? icon;
   final bool loading;
   final Color color;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -118,11 +130,11 @@ class _ButtonContent extends StatelessWidget {
       );
     }
     final text = Text(label, maxLines: 1, overflow: TextOverflow.ellipsis);
-    if (icon == null) return text;
+    if (icon == null && leading == null) return text;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 20),
+        leading ?? Icon(icon, size: 20),
         const SizedBox(width: 8),
         Flexible(child: text),
       ],

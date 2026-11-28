@@ -54,6 +54,7 @@ flutter:
   assets:
     - assets/brand/logo_mark.png
     - assets/brand/logo_wordmark.png
+    - assets/brand/google_logo.png
 
 # App icon from the brand mark. Regenerate after changing the source images:
 #   dart run flutter_launcher_icons

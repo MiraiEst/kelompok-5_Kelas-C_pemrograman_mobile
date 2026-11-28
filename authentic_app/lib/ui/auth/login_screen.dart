@@ -140,7 +140,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 SecondaryButton(
                   color: AppColors.ocean,
                   label: context.l10n.continueWithGoogle,
-                  icon: Icons.g_mobiledata,
+                  leading: Image.asset(
+                    'assets/brand/google_logo.png',
+                    width: 24,
+                    height: 24,
+                    excludeFromSemantics: true,
+                  ),
                   loading: _googleBusy,
                   onPressed: _google,
                 ),
