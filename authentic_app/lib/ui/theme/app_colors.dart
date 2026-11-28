@@ -74,6 +74,9 @@ abstract final class AppColors {
   /// Pale ocean: back arrow, "How it works" box, rating card border.
   static const oceanLight = Color(0xFF99CDE0);
 
+  /// Outline of text fields in the new forms (sign in, register, sell).
+  static const fieldBorder = Color(0xFF3DA0C4);
+
   /// Mid ocean: outlines of the bid step buttons.
   static const oceanMid = Color(0xFF66B4D0);
 

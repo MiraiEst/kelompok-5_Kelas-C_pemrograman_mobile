@@ -73,9 +73,10 @@ class AppTextField extends StatelessWidget {
                 ),
             ],
           ),
-          style: AppText.fieldLabel,
+          // BrandFormTheme sets a bigger label; elsewhere the default stays.
+          style: Theme.of(context).inputDecorationTheme.labelStyle ?? AppText.fieldLabel,
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         TextFormField(
           key: fieldKey,
           controller: controller,

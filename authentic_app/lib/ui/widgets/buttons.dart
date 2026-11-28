@@ -85,7 +85,7 @@ class SecondaryButton extends StatelessWidget {
     );
     if (dashed) {
       button = CustomPaint(
-        painter: const DashedBorderPainter(radius: AppRadius.button, color: AppColors.ink),
+        painter: DashedBorderPainter(radius: AppRadius.button, color: c, strokeWidth: 2),
         child: button,
       );
     }

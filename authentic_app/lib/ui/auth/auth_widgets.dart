@@ -54,9 +54,9 @@ class OrDivider extends StatelessWidget {
 }
 
 class AuthHeading extends StatelessWidget {
-  const AuthHeading({super.key, required this.title, required this.subtitle, this.center = true});
+  const AuthHeading({super.key, required this.title, this.subtitle, this.center = true});
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final bool center;
 
   @override
@@ -68,15 +68,17 @@ class AuthHeading extends StatelessWidget {
         child: Text(
           title,
           textAlign: center ? TextAlign.center : TextAlign.start,
-          style: AppText.heading,
+          style: AppText.heading.copyWith(fontSize: 28, color: AppColors.brandBright),
         ),
       ),
-      const SizedBox(height: 6),
-      Text(
-        subtitle,
-        textAlign: center ? TextAlign.center : TextAlign.start,
-        style: AppText.subtitle,
-      ),
+      if (subtitle != null) ...[
+        const SizedBox(height: 4),
+        Text(
+          subtitle!,
+          textAlign: center ? TextAlign.center : TextAlign.start,
+          style: const TextStyle(fontSize: 15, color: AppColors.cyanSoft),
+        ),
+      ],
     ],
   );
 }

@@ -21,6 +21,7 @@ import '../widgets/segmented_tabs.dart';
 import 'catalog_import_sheet.dart';
 import 'sell_validation.dart';
 import '../../domain/models/item_category.dart';
+import '../widgets/brand_form_theme.dart';
 
 /// A photo in the form: picked on this device, or already online.
 sealed class SellPhoto {
@@ -453,12 +454,24 @@ class _SellScreenState extends ConsumerState<SellScreen> {
         appBar: AppBar(
           leading: IconButton(
             tooltip: context.l10n.close,
-            icon: const Icon(Icons.close),
+            icon: const Icon(Icons.close, color: AppColors.ocean, size: 30),
             onPressed: _close,
           ),
-          title: Text(context.l10n.sellAnItem),
+          titleSpacing: 0,
+          title: Text(
+            context.l10n.sellAnItem,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: AppColors.brandBright,
+            ),
+          ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.brandBright,
+                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
               onPressed: _savingDraft || _busy ? null : _saveDraft,
               child: _savingDraft
                   ? const SizedBox(
@@ -471,228 +484,232 @@ class _SellScreenState extends ConsumerState<SellScreen> {
             const SizedBox(width: 4),
           ],
         ),
-        body: Form(
-          key: _form,
-          autovalidateMode: _submitted
-              ? AutovalidateMode.onUserInteraction
-              : AutovalidateMode.disabled,
-          child: ListView(
-            controller: _scroll,
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            children: [
-              SecondaryButton(
-                label: context.l10n.importFromCatalog,
-                icon: Icons.travel_explore,
-                dashed: true,
-                onPressed: _importFromCatalog,
-              ),
-              const SizedBox(height: 24),
-              _PhotoGrid(
-                key: _photosKey,
-                photos: _photos,
-                progress: _progress,
-                error: _photoError?.text(context),
-                onAdd: _photos.length >= AppConfig.maxPhotos || _busy ? null : _addPhotos,
-                onRemove: _busy ? null : _removePhoto,
-                onMove: _movePhoto,
-              ),
-              const SizedBox(height: 24),
-              AppTextField(
-                key: _titleKey,
-                label: context.l10n.title,
-                controller: _title,
-                hint: context.l10n.titleHint,
-                maxLength: 80,
-                validator: (v) => SellValidation.title(v ?? '')?.text(context),
-              ),
-              const SizedBox(height: 16),
-              AppTextField(
-                label: context.l10n.description,
-                controller: _description,
-                hint: context.l10n.descriptionHint,
-                maxLines: 3,
-                minLines: 3,
-              ),
-              const SizedBox(height: 16),
-              Column(
-                key: _categoryKey,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(context.l10n.category, style: AppText.fieldLabel),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    key: ValueKey(_category),
-                    initialValue: _category,
-                    isExpanded: true,
-                    hint: Text(context.l10n.chooseCategory),
-                    items: [
-                      for (final c in ItemCategory.values)
-                        DropdownMenuItem(value: c.slug, child: Text(c.text(context))),
-                    ],
-                    onChanged: (v) => setState(() {
-                      _category = v;
-                      _dirty = true;
-                    }),
-                    validator: (v) => SellValidation.category(v)?.text(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(context.l10n.condition, style: AppText.fieldLabel),
-              const SizedBox(height: 6),
-              SegmentedTabs<ItemCondition>(
-                values: ItemCondition.values,
-                selected: _condition,
-                label: (c) => c.text(context),
-                onChanged: (c) => setState(() {
-                  _condition = c;
-                  _dirty = true;
-                }),
-              ),
-              const SizedBox(height: 16),
-              Text(context.l10n.format, style: AppText.fieldLabel),
-              const SizedBox(height: 6),
-              SegmentedTabs<ListingFormat>(
-                values: ListingFormat.values,
-                selected: _format,
-                label: (f) => f.text(context),
-                onChanged: (f) => setState(() {
-                  _format = f;
-                  _dirty = true;
-                }),
-              ),
-              if (_format == ListingFormat.buyNow) ...[
-                const SizedBox(height: 6),
-                Text(context.l10n.buyNowOnlyNote, style: AppText.caption),
-              ],
-              const SizedBox(height: 16),
-              Row(
-                key: _pricesKey,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_format.hasAuction)
-                    Expanded(
-                      child: AppTextField(
-                        label: context.l10n.startingPrice,
-                        controller: _start,
-                        rupiah: true,
-                        validator: (_) => SellValidation.startPrice(_format, start)?.text(context),
-                      ),
-                    ),
-                  if (_format == ListingFormat.both) const SizedBox(width: 12),
-                  if (_format.hasBuyNow)
-                    Expanded(
-                      child: AppTextField(
-                        label: context.l10n.buyItNow,
-                        controller: _buyNow,
-                        rupiah: true,
-                        validator: (_) => SellValidation.buyNowPrice(
-                          _format,
-                          start,
-                          reserve,
-                          buyNow,
-                        )?.text(context),
-                      ),
-                    ),
-                ],
-              ),
-              if (_format.hasAuction) ...[
+        body: BrandFormTheme(
+          child: Form(
+            key: _form,
+            autovalidateMode: _submitted
+                ? AutovalidateMode.onUserInteraction
+                : AutovalidateMode.disabled,
+            child: ListView(
+              controller: _scroll,
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              children: [
+                SecondaryButton(
+                  color: AppColors.ocean,
+                  label: context.l10n.importFromCatalog,
+                  icon: Icons.travel_explore,
+                  dashed: true,
+                  onPressed: _importFromCatalog,
+                ),
+                const SizedBox(height: 24),
+                _PhotoGrid(
+                  key: _photosKey,
+                  photos: _photos,
+                  progress: _progress,
+                  error: _photoError?.text(context),
+                  onAdd: _photos.length >= AppConfig.maxPhotos || _busy ? null : _addPhotos,
+                  onRemove: _busy ? null : _removePhoto,
+                  onMove: _movePhoto,
+                ),
+                const SizedBox(height: 24),
+                AppTextField(
+                  key: _titleKey,
+                  label: context.l10n.title,
+                  controller: _title,
+                  hint: context.l10n.titleHint,
+                  maxLength: 80,
+                  validator: (v) => SellValidation.title(v ?? '')?.text(context),
+                ),
                 const SizedBox(height: 16),
                 AppTextField(
-                  key: _reserveKey,
-                  label: context.l10n.reservePrice,
-                  labelSuffix: context.l10n.optionalHidden,
-                  controller: _reserve,
-                  rupiah: true,
-                  helper: context.l10n.reserveHelper,
-                  validator: (_) =>
-                      SellValidation.reservePrice(_format, start, reserve)?.text(context),
+                  label: context.l10n.description,
+                  controller: _description,
+                  hint: context.l10n.descriptionHint,
+                  maxLines: 3,
+                  minLines: 3,
                 ),
-              ],
-              const SizedBox(height: 16),
-              Text(context.l10n.duration, style: AppText.fieldLabel),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final d in durations)
-                    ChoiceChip(
-                      label: Text(d.text(context)),
-                      selected: d == _duration,
-                      materialTapTargetSize: MaterialTapTargetSize.padded,
-                      onSelected: (_) => setState(() {
-                        _duration = d;
+                const SizedBox(height: 16),
+                Column(
+                  key: _categoryKey,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(context.l10n.category, style: brandFieldLabel),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      key: ValueKey(_category),
+                      initialValue: _category,
+                      isExpanded: true,
+                      hint: Text(context.l10n.chooseCategory),
+                      items: [
+                        for (final c in ItemCategory.values)
+                          DropdownMenuItem(value: c.slug, child: Text(c.text(context))),
+                      ],
+                      onChanged: (v) => setState(() {
+                        _category = v;
                         _dirty = true;
                       }),
+                      validator: (v) => SellValidation.category(v)?.text(context),
                     ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                context.l10n.endsOn(endDateFormat.format(DateTime.now().add(_duration.duration))),
-                style: AppText.caption,
-              ),
-              const SizedBox(height: 28),
-              SectionHeader(context.l10n.shippingAndReturns),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: AppTextField(
-                      label: context.l10n.shippingCost,
-                      controller: _shipping,
-                      rupiah: true,
-                      hint: context.l10n.zeroFree,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(context.l10n.shipsWithin, style: AppText.fieldLabel),
-                        const SizedBox(height: 6),
-                        DropdownButtonFormField<int>(
-                          initialValue: _handlingDays,
-                          isExpanded: true,
-                          items: [
-                            for (final d in const [1, 2, 3, 5])
-                              DropdownMenuItem(value: d, child: Text(context.l10n.nDays(d))),
-                          ],
-                          onChanged: (v) => setState(() {
-                            _handlingDays = v ?? _handlingDays;
-                            _dirty = true;
-                          }),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              AppTextField(
-                label: context.l10n.itemLocation,
-                controller: _location,
-                hint: context.l10n.itemLocationHint,
-                textInputAction: TextInputAction.done,
-              ),
-              const SizedBox(height: 8),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  context.l10n.acceptReturns,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  ],
                 ),
-                subtitle: Text(context.l10n.within7Days, style: AppText.caption),
-                value: _acceptsReturns,
-                onChanged: (v) => setState(() {
-                  _acceptsReturns = v;
-                  _dirty = true;
-                }),
-              ),
-            ],
+                const SizedBox(height: 16),
+                Text(context.l10n.condition, style: brandFieldLabel),
+                const SizedBox(height: 8),
+                SegmentedTabs<ItemCondition>(
+                  values: ItemCondition.values,
+                  selected: _condition,
+                  label: (c) => c.text(context),
+                  onChanged: (c) => setState(() {
+                    _condition = c;
+                    _dirty = true;
+                  }),
+                ),
+                const SizedBox(height: 16),
+                Text(context.l10n.format, style: brandFieldLabel),
+                const SizedBox(height: 8),
+                SegmentedTabs<ListingFormat>(
+                  values: ListingFormat.values,
+                  selected: _format,
+                  label: (f) => f.text(context),
+                  onChanged: (f) => setState(() {
+                    _format = f;
+                    _dirty = true;
+                  }),
+                ),
+                if (_format == ListingFormat.buyNow) ...[
+                  const SizedBox(height: 6),
+                  Text(context.l10n.buyNowOnlyNote, style: AppText.caption),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  key: _pricesKey,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_format.hasAuction)
+                      Expanded(
+                        child: AppTextField(
+                          label: context.l10n.startingPrice,
+                          controller: _start,
+                          rupiah: true,
+                          validator: (_) =>
+                              SellValidation.startPrice(_format, start)?.text(context),
+                        ),
+                      ),
+                    if (_format == ListingFormat.both) const SizedBox(width: 12),
+                    if (_format.hasBuyNow)
+                      Expanded(
+                        child: AppTextField(
+                          label: context.l10n.buyItNow,
+                          controller: _buyNow,
+                          rupiah: true,
+                          validator: (_) => SellValidation.buyNowPrice(
+                            _format,
+                            start,
+                            reserve,
+                            buyNow,
+                          )?.text(context),
+                        ),
+                      ),
+                  ],
+                ),
+                if (_format.hasAuction) ...[
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    key: _reserveKey,
+                    label: context.l10n.reservePrice,
+                    labelSuffix: context.l10n.optionalHidden,
+                    controller: _reserve,
+                    rupiah: true,
+                    helper: context.l10n.reserveHelper,
+                    validator: (_) =>
+                        SellValidation.reservePrice(_format, start, reserve)?.text(context),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Text(context.l10n.duration, style: brandFieldLabel),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final d in durations)
+                      ChoiceChip(
+                        label: Text(d.text(context)),
+                        selected: d == _duration,
+                        materialTapTargetSize: MaterialTapTargetSize.padded,
+                        onSelected: (_) => setState(() {
+                          _duration = d;
+                          _dirty = true;
+                        }),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  context.l10n.endsOn(endDateFormat.format(DateTime.now().add(_duration.duration))),
+                  style: AppText.caption,
+                ),
+                const SizedBox(height: 28),
+                SectionHeader(context.l10n.shippingAndReturns),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        label: context.l10n.shippingCost,
+                        controller: _shipping,
+                        rupiah: true,
+                        hint: context.l10n.zeroFree,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(context.l10n.shipsWithin, style: AppText.fieldLabel),
+                          const SizedBox(height: 6),
+                          DropdownButtonFormField<int>(
+                            initialValue: _handlingDays,
+                            isExpanded: true,
+                            items: [
+                              for (final d in const [1, 2, 3, 5])
+                                DropdownMenuItem(value: d, child: Text(context.l10n.nDays(d))),
+                            ],
+                            onChanged: (v) => setState(() {
+                              _handlingDays = v ?? _handlingDays;
+                              _dirty = true;
+                            }),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  label: context.l10n.itemLocation,
+                  controller: _location,
+                  hint: context.l10n.itemLocationHint,
+                  textInputAction: TextInputAction.done,
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    context.l10n.acceptReturns,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(context.l10n.within7Days, style: AppText.caption),
+                  value: _acceptsReturns,
+                  onChanged: (v) => setState(() {
+                    _acceptsReturns = v;
+                    _dirty = true;
+                  }),
+                ),
+              ],
+            ),
           ),
         ),
         bottomNavigationBar: DecoratedBox(
@@ -707,7 +724,12 @@ class _SellScreenState extends ConsumerState<SellScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  PrimaryButton(label: context.l10n.listItem, loading: _busy, onPressed: _submit),
+                  PrimaryButton(
+                    color: AppColors.ocean,
+                    label: context.l10n.listItem,
+                    loading: _busy,
+                    onPressed: _submit,
+                  ),
                   const SizedBox(height: 6),
                   Text(
                     context.l10n.finalValueFee(AppConfig.finalValueFeePercent),
@@ -773,10 +795,14 @@ class _PhotoGrid extends StatelessWidget {
                 child: CustomPaint(
                   painter: DashedBorderPainter(
                     radius: AppRadius.photo,
-                    color: error != null ? AppColors.error : AppColors.inputBorder,
+                    color: error != null ? AppColors.error : AppColors.fieldBorder,
+                    strokeWidth: 2,
                   ),
                   child: Center(
-                    child: Icon(Icons.add, color: onAdd == null ? AppColors.line : AppColors.ink),
+                    child: Icon(
+                      Icons.add,
+                      color: onAdd == null ? AppColors.line : AppColors.fieldBorder,
+                    ),
                   ),
                 ),
               ),
